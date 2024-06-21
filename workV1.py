@@ -411,22 +411,24 @@ for epoch in range(num_epochs):
 print('Finished Training')
 
 ######################################################
+
 def compute_rms_error(generated_cloud, variable, ground_truth):
-    generated = generated_cloud[0, variable, :]  # Extract the relevant slice from the generated cloud
-    squared_diff = (generated - ground_truth) ** 2  # Compute squared differences
-    mean_squared_diff = np.mean(squared_diff)  # Compute mean squared difference
-    rms_error = np.sqrt(mean_squared_diff)  # Compute root mean squared error
+    generated = generated_cloud[0, variable, :]  
+    squared_diff = (generated - ground_truth) ** 2 
+    mean_squared_diff = np.mean(squared_diff) 
+    rms_error = np.sqrt(mean_squared_diff)  
     return rms_error
 
 #######################################################
+
 def compute_relative_error(generated_cloud, variable, ground_truth):
-    generated = generated_cloud[0, variable, :]  # Extract the relevant slice from the generated cloud
-    difference = generated - ground_truth  # Compute the difference
-    norm_difference = np.linalg.norm(difference)  # Compute the norm of the difference
-    norm_ground_truth = np.linalg.norm(ground_truth)  # Compute the norm of the ground truth
-    relative_error = norm_difference / norm_ground_truth  # Compute the relative error
+    generated = generated_cloud[0, variable, :]  
+    difference = generated - ground_truth  
+    norm_difference = np.linalg.norm(difference)  
+    norm_ground_truth = np.linalg.norm(ground_truth)  
+    relative_error = norm_difference / norm_ground_truth
     return relative_error
-    
+
 #######################################################
 
 for j in range(data_number):
