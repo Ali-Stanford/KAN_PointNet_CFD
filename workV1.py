@@ -290,12 +290,9 @@ class PointNetKAN(nn.Module):
         self.bn9 = nn.BatchNorm1d(int(128 * scaling))
  
     def forward(self, x):
-
-        #print(x.shape)
         
         # Shared KAN (64, 64)
         x = self.jacobikan1(x)
-        #print(x.shape)
         #x = self.ln1(x)
         x = self.bn1(x)
         #print(x.shape)
@@ -304,8 +301,6 @@ class PointNetKAN(nn.Module):
         x = self.bn2(x)
 
         local_feature = x
-
-        #print(x.shape)
 
         # Shared KAN (64, 128, 1024)
         x = self.jacobikan3(x)
@@ -318,8 +313,6 @@ class PointNetKAN(nn.Module):
         x = self.bn5(x)
         #x = self.ln5(x)
       
-        #print(x.shape)
-
         # Max pooling to get the global feature
         global_feature = F.max_pool1d(x, kernel_size=num_points)
         global_feature = global_feature.view(-1, global_feature.size(1), 1).expand(-1, -1, num_points)
@@ -347,7 +340,7 @@ class PointNetKAN(nn.Module):
         #x = self.ln9(x) 
         x = self.bn9(x)  
         x = self.jacobikan10(x)
- 
+        
         return x
 
 ###################################################
@@ -376,7 +369,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 100
+num_epochs = 50 #100
 
 epoch_losses = []
 
@@ -417,4 +410,36 @@ for epoch in range(num_epochs):
     
 print('Finished Training')
 
+######################################################
+def compute_rms_error(generated_cloud, variable, ground_truth):
+    generated = generated_cloud[0, variable, :]  # Extract the relevant slice from the generated cloud
+    squared_diff = (generated - ground_truth) ** 2  # Compute squared differences
+    mean_squared_diff = np.mean(squared_diff)  # Compute mean squared difference
+    rms_error = np.sqrt(mean_squared_diff)  # Compute root mean squared error
+    return rms_error
 
+#######################################################
+def compute_relative_error(generated_cloud, variable, ground_truth):
+    generated = generated_cloud[0, variable, :]  # Extract the relevant slice from the generated cloud
+    difference = generated - ground_truth  # Compute the difference
+    norm_difference = np.linalg.norm(difference)  # Compute the norm of the difference
+    norm_ground_truth = np.linalg.norm(ground_truth)  # Compute the norm of the ground truth
+    relative_error = norm_difference / norm_ground_truth  # Compute the relative error
+    return relative_error
+    
+#######################################################
+
+for j in range(data_number):
+    model.eval()
+    input_data_pred = torch.stack((torch.from_numpy(input_data[j,:,0]).float(), torch.from_numpy(input_data[j,:,1]).float()), dim=0) 
+    input_data_pred = input_data_pred.unsqueeze(0)
+
+    with torch.no_grad():
+        input_data_pred = input_data_pred.to(device)
+        predictions = model(input_data_pred) #shape is [1, 1, num_points]
+
+    plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,0,:].cpu().numpy(),'u_velocity'+str(j),'u (x-velocity component)')
+    rms = compute_rms_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
+    print("RMS: "+str(j)+": ",rms)
+    lrms = compute_relative_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
+    print("Relative RMS: "+str(j)+": ",lrms)
