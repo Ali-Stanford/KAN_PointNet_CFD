@@ -1,0 +1,420 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
+from torch.utils.data import Dataset, DataLoader
+import os
+import linecache
+from operator import itemgetter
+import numpy as np
+from numpy import zeros
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
+plt.rcParams['font.size'] = '12'
+from mpl_toolkits.mplot3d import Axes3D
+
+# Check CUDA availability
+print(torch.cuda.is_available())
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")  # GPU available
+else:
+    device = torch.device("cpu")  # Only CPU available
+
+torch.manual_seed(0)
+
+
+######### Library #########
+
+Data = np.load('Data.npy')
+data_number = Data.shape[0]
+
+print('Number of data is:')
+print(data_number)
+
+point_numbers = 1024
+space_variable = 2 # 2 in 2D (x,y) and 3 in 3D (x,y,z)
+cfd_variable = 3 # (u, v, p); which are the x-component of velocity, y-component of velocity, and pressure fields
+
+input_data = zeros([data_number,point_numbers,space_variable],dtype='f')
+output_data = zeros([data_number,point_numbers,cfd_variable],dtype='f')
+
+for i in range(data_number):
+    input_data[i,:,0] = Data[i,:,0] # x coordinate (m)
+    input_data[i,:,1] = Data[i,:,1] # y coordinate (m)
+    output_data[i,:,0] = Data[i,:,3] # u (m/s)
+    output_data[i,:,1] = Data[i,:,4] # v (m/s)
+    output_data[i,:,2] = Data[i,:,2] # p (Pa)
+
+
+x_min = np.min(input_data[:,:,0])
+x_max = np.max(input_data[:,:,0])
+y_min = np.min(input_data[:,:,1])
+y_max = np.max(input_data[:,:,1])
+
+#input_data[:,:,0] = (input_data[:,:,0] - x_min)/(x_max - x_min)
+#input_data[:,:,1] = (input_data[:,:,1] - y_min)/(y_max - y_min)
+
+input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
+input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
+
+u_min = np.min(output_data[:,:,0])
+u_max = np.max(output_data[:,:,0])
+v_min = np.min(output_data[:,:,1])
+v_max = np.max(output_data[:,:,1])
+p_min = np.min(output_data[:,:,2])
+p_max = np.max(output_data[:,:,2])
+
+#output_data[:,:,0] = (output_data[:,:,0] - u_min)/(u_max - u_min)
+#output_data[:,:,1] = (output_data[:,:,1] - v_min)/(v_max - v_min)
+#output_data[:,:,2] = (output_data[:,:,2] - p_min)/(p_max - p_min)
+
+#output_data[:,:,0] = 2*(output_data[:,:,0] - u_min)/(u_max - u_min) - 1
+#output_data[:,:,1] = 2*(output_data[:,:,1] - v_min)/(v_max - v_min) - 1
+#output_data[:,:,2] = 2*(output_data[:,:,2] - p_min)/(p_max - p_min) - 1
+
+##### Data visualization #####
+
+def plot2DPointCloud(x_coord,y_coord,file_name):
+    plt.scatter(x_coord,y_coord,s=2.5)
+    plt.xlabel('x (m)')
+    plt.ylabel('y (m)')
+    x_upper = np.max(x_coord) + 1
+    x_lower = np.min(x_coord) - 1
+    y_upper = np.max(y_coord) + 1
+    y_lower = np.min(y_coord) - 1
+    plt.xlim([x_lower, x_upper])
+    plt.ylim([y_lower, y_upper])
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig(file_name+'.png',dpi=300)
+    #plt.savefig(file_name+'.eps') #You can use this line for saving figures in EPS format
+    plt.clf()
+    #plt.show()
+
+def plotSolution(x_coord,y_coord,solution,file_name,title):
+    plt.scatter(x_coord, y_coord, s=2.5,c=solution,cmap='jet')
+    plt.title(title)
+    plt.xlabel('x (m)')
+    plt.ylabel('y (m)')
+    x_upper = np.max(x_coord) + 1
+    x_lower = np.min(x_coord) - 1
+    y_upper = np.max(y_coord) + 1
+    y_lower = np.min(y_coord) - 1
+    plt.xlim([x_lower, x_upper])
+    plt.ylim([y_lower, y_upper])
+    plt.gca().set_aspect('equal', adjustable='box')
+    cbar= plt.colorbar()
+    plt.savefig(file_name+'.png',dpi=300)
+    #plt.savefig(file_name+'.eps') #You can use this line for saving figures in EPS format
+    plt.clf()
+    #plt.show()
+
+#number = 10 #It should be less than 'data_number'
+#plot2DPointCloud(input_data[number,:,0],input_data[number,:,1],'PointCloud')
+#plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,0],'u_velocity','u (x-velocity component)')
+#plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,1],'v_velocity','v (y-velocity component)')
+#plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,2],'pressure','pressure')
+
+####################################################
+def plot_loss(losses):
+    plt.plot(losses, label='Training Loss')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.yscale('log')
+    plt.legend()
+    plt.savefig('loss.png',dpi=300)
+    plt.clf
+    #plt.show()
+
+############################
+class CreateDataset(Dataset):
+    def __init__(self, input_data_x, input_data_y, output_data_u):
+        assert input_data_x.shape == input_data_y.shape == output_data_u.shape, \
+            "Input and output data must have the same shape."
+        
+        self.input_data_x = input_data_x
+        self.input_data_y = input_data_y
+        self.output_data_u = output_data_u
+
+    def __len__(self):
+        return self.input_data_x.shape[0]
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        
+        x = self.input_data_x[idx]
+        y = self.input_data_y[idx]
+        u = self.output_data_u[idx]
+
+        input_data = torch.stack((x, y), dim=0)
+        return input_data, u
+######################################################################
+
+class CreateDataset(Dataset):
+    def __init__(self, input_data_x, input_data_y, output_data_u):
+        assert input_data_x.shape == input_data_y.shape == output_data_u.shape, \
+            "Input and output data must have the same shape."
+        
+        self.input_data_x = input_data_x
+        self.input_data_y = input_data_y
+        self.output_data_u = output_data_u
+
+    def __len__(self):
+        return self.input_data_x.shape[0]
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        
+        x = self.input_data_x[idx]
+        y = self.input_data_y[idx]
+        u = self.output_data_u[idx]
+
+        input_data = torch.stack((x, y), dim=0)
+        u = u.unsqueeze(0)  # Add extra dimension to match output shape
+        return input_data, u
+
+################## Jacobi KAN Layer ##################################
+class JacobiKANLayer2(nn.Module):
+    def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
+        super(JacobiKANLayer2, self).__init__()
+        self.inputdim = input_dim
+        self.outdim   = output_dim
+        self.a        = a
+        self.b        = b
+        self.degree   = degree
+
+        self.jacobi_coeffs = nn.Parameter(torch.empty(input_dim, output_dim, degree + 1))
+        
+        nn.init.normal_(self.jacobi_coeffs, mean=0.0, std=1/(input_dim * (degree + 1)))
+
+    def forward(self, x):
+        x = torch.reshape(x, (-1, self.inputdim))  # shape = (batch_size, inputdim)
+        # Since Jacobian polynomial is defined in [-1, 1]
+        # We need to normalize x to [-1, 1] using tanh
+        x = torch.tanh(x)
+        # Initialize Jacobian polynomial tensors
+        jacobi = torch.ones(x.shape[0], self.inputdim, self.degree + 1, device=x.device)
+        if self.degree > 0: ## degree = 0: jacobi[:, :, 0] = 1 (already initialized) ; degree = 1: jacobi[:, :, 1] = x ; d
+            jacobi[:, :, 1] = ((self.a-self.b) + (self.a+self.b+2) * x) / 2
+        for i in range(2, self.degree + 1):
+            theta_k  = (2*i+self.a+self.b)*(2*i+self.a+self.b-1) / (2*i*(i+self.a+self.b))
+            theta_k1 = (2*i+self.a+self.b-1)*(self.a*self.a-self.b*self.b) / (2*i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
+            theta_k2 = (i+self.a-1)*(i+self.b-1)*(2*i+self.a+self.b) / (i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
+            jacobi[:, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, i - 1].clone() - theta_k2 * jacobi[:, :, i - 2].clone()  # 2 * x * jacobi[:, :, i - 1].clone() - jacobi[:, :, i - 2].clone()
+        # Compute the Jacobian interpolation
+        y = torch.einsum('bid,iod->bo', jacobi, self.jacobi_coeffs)  # shape = (batch_size, outdim)
+        y = y.view(-1, self.outdim)
+        return y
+######################################
+
+class JacobiKANLayer(nn.Module):
+    def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
+        super(JacobiKANLayer, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.a = a
+        self.b = b
+        self.degree = degree
+
+        self.jacobi_coeffs = nn.Parameter(torch.empty(input_dim, output_dim, degree + 1))
+        nn.init.normal_(self.jacobi_coeffs, mean=0.0, std=1 / (input_dim * (degree + 1)))
+
+    def forward(self, x):
+        batch_size, input_dim, num_points = x.shape
+        x = x.permute(0, 2, 1).contiguous()  # shape = (batch_size, num_points, input_dim)
+        x = torch.tanh(x)  # Normalize x to [-1, 1]
+        
+        # Initialize Jacobi polynomial tensors
+        jacobi = torch.ones(batch_size, num_points, self.input_dim, self.degree + 1, device=x.device)
+        
+        if self.degree > 0:
+            jacobi[:, :, :, 1] = ((self.a - self.b) + (self.a + self.b + 2) * x) / 2
+
+        for i in range(2, self.degree + 1):
+            theta_k = (2 * i + self.a + self.b) * (2 * i + self.a + self.b - 1) / (2 * i * (i + self.a + self.b))
+            theta_k1 = (2 * i + self.a + self.b - 1) * (self.a ** 2 - self.b ** 2) / (2 * i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
+            theta_k2 = (i + self.a - 1) * (i + self.b - 1) * (2 * i + self.a + self.b) / (i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
+            jacobi[:, :, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, :, i - 1].clone() - theta_k2 * jacobi[:, :, :, i - 2].clone()
+        
+        # Compute the Jacobi interpolation
+        jacobi = jacobi.permute(0, 2, 3, 1)  # shape = (batch_size, input_dim, degree + 1, num_points)
+        y = torch.einsum('bids,iod->bos', jacobi, self.jacobi_coeffs)  # shape = (batch_size, output_dim, num_points)
+        
+        return y
+
+############################ Define PointNet with KAN ##############################
+class PointNetKAN(nn.Module):
+    def __init__(self, input_channels, output_channels, scaling=1.0):
+        super(PointNetKAN, self).__init__()
+
+        #Shared KAN (64, 64)
+        self.jacobikan1 = JacobiKANLayer(input_channels, int(64 * scaling), 3 )
+        self.ln1 = nn.LayerNorm(int(64 * scaling))
+        self.jacobikan2 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), 3)
+        self.ln2 = nn.LayerNorm(int(64 * scaling))
+   
+        #Shared KAN (64, 128, 1024)
+        self.jacobikan3 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), 3)
+        self.ln3 = nn.LayerNorm(int(64 * scaling))
+        self.jacobikan4 = JacobiKANLayer(int(64 * scaling), int(128 * scaling), 3)
+        self.ln4 = nn.LayerNorm(int(128 * scaling))
+        self.jacobikan5 = JacobiKANLayer(int(128 * scaling), int(1024 * scaling), 3)
+        self.ln5 = nn.LayerNorm(int(1024 * scaling))
+
+        #Shared KAN (512, 256, 128)
+        self.jacobikan6 = JacobiKANLayer(int(1024 * scaling) + int(64 * scaling), int(512 * scaling), 3)
+        self.ln6 = nn.LayerNorm(int(512 * scaling))
+        self.jacobikan7 = JacobiKANLayer(int(512 * scaling), int(256 * scaling), 3)
+        self.ln7 = nn.LayerNorm(int(256 * scaling))
+        self.jacobikan8 = JacobiKANLayer(int(256 * scaling), int(128 * scaling), 3)
+        self.ln8 = nn.LayerNorm(int(128 * scaling))
+
+        # Shared MLP (128, output_channels)
+        self.jacobikan9 = JacobiKANLayer(int(128 * scaling), int(128 * scaling), 3)
+        self.ln9 = nn.LayerNorm(int(128 * scaling))
+        self.jacobikan10 = JacobiKANLayer(int(128 * scaling), output_channels, 3)
+
+        self.bn1 = nn.BatchNorm1d(int(64 * scaling))
+        self.bn2 = nn.BatchNorm1d(int(64 * scaling))
+        self.bn3 = nn.BatchNorm1d(int(64 * scaling))
+        self.bn4 = nn.BatchNorm1d(int(128 * scaling))
+        self.bn5 = nn.BatchNorm1d(int(1024 * scaling))
+        self.bn6 = nn.BatchNorm1d(int(512 * scaling))
+        self.bn7 = nn.BatchNorm1d(int(256 * scaling))
+        self.bn8 = nn.BatchNorm1d(int(128 * scaling))
+        self.bn9 = nn.BatchNorm1d(int(128 * scaling))
+ 
+    def forward(self, x):
+
+        #print(x.shape)
+        
+        # Shared KAN (64, 64)
+        x = self.jacobikan1(x)
+        #print(x.shape)
+        #x = self.ln1(x)
+        x = self.bn1(x)
+        #print(x.shape)
+        x = self.jacobikan2(x)
+        #x = self.ln2(x)
+        x = self.bn2(x)
+
+        local_feature = x
+
+        #print(x.shape)
+
+        # Shared KAN (64, 128, 1024)
+        x = self.jacobikan3(x)
+        #x = self.ln3(x)
+        x = self.bn3(x)
+        x = self.jacobikan4(x)
+        #x = self.ln4(x)
+        x = self.bn4(x)
+        x = self.jacobikan5(x)
+        x = self.bn5(x)
+        #x = self.ln5(x)
+      
+        #print(x.shape)
+
+        # Max pooling to get the global feature
+        global_feature = F.max_pool1d(x, kernel_size=num_points)
+        global_feature = global_feature.view(-1, global_feature.size(1), 1).expand(-1, -1, num_points)
+
+
+        #global_feature = F.max_pool1d(x, kernel_size=x.size(-1))
+        #global_feature = global_feature.expand(-1, -1, num_points)
+
+        # Concatenate local and global features
+        x = torch.cat([local_feature, global_feature], dim=1)
+
+        # Shared MLP (512, 256, 128)
+        x = self.jacobikan6(x)
+        #x = self.ln6(x)
+        x = self.bn6(x)
+        x = self.jacobikan7(x)
+        #x = self.ln7(x)
+        x = self.bn7(x)
+        x = self.jacobikan8(x)
+        #x = self.ln8(x)
+        x = self.bn8(x)
+
+        # Shared MLP (128, output_channels)
+        x = self.jacobikan9(x)
+        #x = self.ln9(x) 
+        x = self.bn9(x)  
+        x = self.jacobikan10(x)
+ 
+        return x
+
+###################################################
+# Data
+num_samples = data_number
+num_points = 1024
+
+input_data_x = torch.from_numpy(input_data[:,:,0]).float()
+input_data_y = torch.from_numpy(input_data[:,:,1]).float()
+output_data_u = torch.from_numpy(output_data[:,:,0]).float()
+
+Batch_Size = 20 
+# Create dataset and dataloader
+dataset = CreateDataset(input_data_x, input_data_y, output_data_u) 
+dataloader = DataLoader(dataset, batch_size=Batch_Size, shuffle=True, drop_last=True)
+
+
+# Instantiate the model
+input_channels = 2 #x and y
+output_channels = 1 #u
+Scaling = 1.0
+model = PointNetKAN(input_channels, output_channels, scaling=Scaling)
+model = model.to(device)
+
+# Loss function and optimizer
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
+
+num_epochs = 100
+
+epoch_losses = []
+
+for epoch in range(num_epochs):
+    model.train()  # Set the model to training mode
+    running_loss = 0.0
+        
+    for i, (inputs, targets) in enumerate(dataloader):  # Note only two elements are unpacked
+        inputs = inputs.to(device)  # Move inputs to device
+        targets = targets.to(device)  # Move targets to device
+         
+   
+        # Zero the parameter gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        outputs = model(inputs)
+        
+        # Compute loss
+        loss = criterion(outputs, targets)
+        
+        # Backward pass
+        loss.backward()
+        
+        # Optimize
+        optimizer.step()
+        
+        print(loss.item())
+
+        # Print statistics
+        running_loss += loss.item()
+        if i % 10 == 9:  # Print every 10 batches
+            print(f'Epoch [{epoch+1}/{num_epochs}], Batch [{i+1}/{len(dataloader)}], Loss: {running_loss / 10:.4f}')
+            running_loss = 0.0
+    
+    # Log epoch loss
+    epoch_losses.append(running_loss / len(dataloader))
+    
+print('Finished Training')
+
+
