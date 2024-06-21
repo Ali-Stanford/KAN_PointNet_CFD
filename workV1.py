@@ -440,6 +440,10 @@ for j in range(data_number):
         input_data_pred = input_data_pred.to(device)
         predictions = model(input_data_pred) #shape is [1, 1, num_points]
 
+    # Back to usuall X and Y
+    input_data[j,:,0] = (input_data[j,:,0] + 1)*(x_max - x_min)/2 + x_min
+    input_data[j,:,1] = (input_data[j,:,1] + 1)*(y_max - y_min)/2 + y_min
+
     plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,0,:].cpu().numpy(),'u_velocity'+str(j),'u (x-velocity component)')
     rms = compute_rms_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
     print("RMS: "+str(j)+": ",rms)
