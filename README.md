@@ -1,1 +1,1 @@
-# KANPointNet
+# KAN PointNet
