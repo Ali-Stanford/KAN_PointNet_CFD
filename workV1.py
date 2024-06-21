@@ -129,29 +129,6 @@ def plot_loss(losses):
     plt.clf
     #plt.show()
 
-############################
-class CreateDataset(Dataset):
-    def __init__(self, input_data_x, input_data_y, output_data_u):
-        assert input_data_x.shape == input_data_y.shape == output_data_u.shape, \
-            "Input and output data must have the same shape."
-        
-        self.input_data_x = input_data_x
-        self.input_data_y = input_data_y
-        self.output_data_u = output_data_u
-
-    def __len__(self):
-        return self.input_data_x.shape[0]
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-        
-        x = self.input_data_x[idx]
-        y = self.input_data_y[idx]
-        u = self.output_data_u[idx]
-
-        input_data = torch.stack((x, y), dim=0)
-        return input_data, u
 ######################################################################
 
 class CreateDataset(Dataset):
@@ -179,37 +156,38 @@ class CreateDataset(Dataset):
         return input_data, u
 
 ################## Jacobi KAN Layer ##################################
-class JacobiKANLayer2(nn.Module):
-    def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
-        super(JacobiKANLayer2, self).__init__()
-        self.inputdim = input_dim
-        self.outdim   = output_dim
-        self.a        = a
-        self.b        = b
-        self.degree   = degree
+#class JacobiKANLayer2(nn.Module):
+#    def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
+#        super(JacobiKANLayer2, self).__init__()
+#        self.inputdim = input_dim
+#        self.outdim   = output_dim
+#        self.a        = a
+#        self.b        = b
+#        self.degree   = degree
 
-        self.jacobi_coeffs = nn.Parameter(torch.empty(input_dim, output_dim, degree + 1))
+#        self.jacobi_coeffs = nn.Parameter(torch.empty(input_dim, output_dim, degree + 1))
         
-        nn.init.normal_(self.jacobi_coeffs, mean=0.0, std=1/(input_dim * (degree + 1)))
+#        nn.init.normal_(self.jacobi_coeffs, mean=0.0, std=1/(input_dim * (degree + 1)))
 
-    def forward(self, x):
-        x = torch.reshape(x, (-1, self.inputdim))  # shape = (batch_size, inputdim)
+#    def forward(self, x):
+#        x = torch.reshape(x, (-1, self.inputdim))  # shape = (batch_size, inputdim)
         # Since Jacobian polynomial is defined in [-1, 1]
         # We need to normalize x to [-1, 1] using tanh
-        x = torch.tanh(x)
+#        x = torch.tanh(x)
         # Initialize Jacobian polynomial tensors
-        jacobi = torch.ones(x.shape[0], self.inputdim, self.degree + 1, device=x.device)
-        if self.degree > 0: ## degree = 0: jacobi[:, :, 0] = 1 (already initialized) ; degree = 1: jacobi[:, :, 1] = x ; d
-            jacobi[:, :, 1] = ((self.a-self.b) + (self.a+self.b+2) * x) / 2
-        for i in range(2, self.degree + 1):
-            theta_k  = (2*i+self.a+self.b)*(2*i+self.a+self.b-1) / (2*i*(i+self.a+self.b))
-            theta_k1 = (2*i+self.a+self.b-1)*(self.a*self.a-self.b*self.b) / (2*i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
-            theta_k2 = (i+self.a-1)*(i+self.b-1)*(2*i+self.a+self.b) / (i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
-            jacobi[:, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, i - 1].clone() - theta_k2 * jacobi[:, :, i - 2].clone()  # 2 * x * jacobi[:, :, i - 1].clone() - jacobi[:, :, i - 2].clone()
+#        jacobi = torch.ones(x.shape[0], self.inputdim, self.degree + 1, device=x.device)
+#        if self.degree > 0: ## degree = 0: jacobi[:, :, 0] = 1 (already initialized) ; degree = 1: jacobi[:, :, 1] = x ; d
+#            jacobi[:, :, 1] = ((self.a-self.b) + (self.a+self.b+2) * x) / 2
+#        for i in range(2, self.degree + 1):
+#            theta_k  = (2*i+self.a+self.b)*(2*i+self.a+self.b-1) / (2*i*(i+self.a+self.b))
+#            theta_k1 = (2*i+self.a+self.b-1)*(self.a*self.a-self.b*self.b) / (2*i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
+#            theta_k2 = (i+self.a-1)*(i+self.b-1)*(2*i+self.a+self.b) / (i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
+#            jacobi[:, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, i - 1].clone() - theta_k2 * jacobi[:, :, i - 2].clone()  # 2 * x * jacobi[:, :, i - 1].clone() - jacobi[:, :, i - 2].clone()
         # Compute the Jacobian interpolation
-        y = torch.einsum('bid,iod->bo', jacobi, self.jacobi_coeffs)  # shape = (batch_size, outdim)
-        y = y.view(-1, self.outdim)
-        return y
+#        y = torch.einsum('bid,iod->bo', jacobi, self.jacobi_coeffs)  # shape = (batch_size, outdim)
+#        y = y.view(-1, self.outdim)
+#        return y
+
 ######################################
 
 class JacobiKANLayer(nn.Module):
@@ -254,29 +232,29 @@ class PointNetKAN(nn.Module):
 
         #Shared KAN (64, 64)
         self.jacobikan1 = JacobiKANLayer(input_channels, int(64 * scaling), 3 )
-        self.ln1 = nn.LayerNorm(int(64 * scaling))
+        #self.ln1 = nn.LayerNorm(int(64 * scaling))
         self.jacobikan2 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), 3)
-        self.ln2 = nn.LayerNorm(int(64 * scaling))
+        #self.ln2 = nn.LayerNorm(int(64 * scaling))
    
         #Shared KAN (64, 128, 1024)
         self.jacobikan3 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), 3)
-        self.ln3 = nn.LayerNorm(int(64 * scaling))
+        #self.ln3 = nn.LayerNorm(int(64 * scaling))
         self.jacobikan4 = JacobiKANLayer(int(64 * scaling), int(128 * scaling), 3)
-        self.ln4 = nn.LayerNorm(int(128 * scaling))
+        #self.ln4 = nn.LayerNorm(int(128 * scaling))
         self.jacobikan5 = JacobiKANLayer(int(128 * scaling), int(1024 * scaling), 3)
-        self.ln5 = nn.LayerNorm(int(1024 * scaling))
+        #self.ln5 = nn.LayerNorm(int(1024 * scaling))
 
         #Shared KAN (512, 256, 128)
         self.jacobikan6 = JacobiKANLayer(int(1024 * scaling) + int(64 * scaling), int(512 * scaling), 3)
-        self.ln6 = nn.LayerNorm(int(512 * scaling))
+        #self.ln6 = nn.LayerNorm(int(512 * scaling))
         self.jacobikan7 = JacobiKANLayer(int(512 * scaling), int(256 * scaling), 3)
-        self.ln7 = nn.LayerNorm(int(256 * scaling))
+        #self.ln7 = nn.LayerNorm(int(256 * scaling))
         self.jacobikan8 = JacobiKANLayer(int(256 * scaling), int(128 * scaling), 3)
-        self.ln8 = nn.LayerNorm(int(128 * scaling))
+        #self.ln8 = nn.LayerNorm(int(128 * scaling))
 
-        # Shared MLP (128, output_channels)
+        # Shared KAN (128, output_channels)
         self.jacobikan9 = JacobiKANLayer(int(128 * scaling), int(128 * scaling), 3)
-        self.ln9 = nn.LayerNorm(int(128 * scaling))
+        #self.ln9 = nn.LayerNorm(int(128 * scaling))
         self.jacobikan10 = JacobiKANLayer(int(128 * scaling), output_channels, 3)
 
         self.bn1 = nn.BatchNorm1d(int(64 * scaling))
@@ -316,7 +294,6 @@ class PointNetKAN(nn.Module):
         # Max pooling to get the global feature
         global_feature = F.max_pool1d(x, kernel_size=num_points)
         global_feature = global_feature.view(-1, global_feature.size(1), 1).expand(-1, -1, num_points)
-
 
         #global_feature = F.max_pool1d(x, kernel_size=x.size(-1))
         #global_feature = global_feature.expand(-1, -1, num_points)
@@ -405,11 +382,9 @@ for epoch in range(num_epochs):
             print(f'Epoch [{epoch+1}/{num_epochs}], Batch [{i+1}/{len(dataloader)}], Loss: {running_loss / 10:.4f}')
             running_loss = 0.0
     
-    # Log epoch loss
     epoch_losses.append(running_loss / len(dataloader))
-    
-print('Finished Training')
 
+plot_loss(epoch_losses)
 ######################################################
 
 def compute_rms_error(generated_cloud, variable, ground_truth):
@@ -430,6 +405,8 @@ def compute_relative_error(generated_cloud, variable, ground_truth):
     return relative_error
 
 #######################################################
+total_rms = 0.0
+total_relative_rms = 0.0
 
 for j in range(data_number):
     model.eval()
@@ -444,8 +421,16 @@ for j in range(data_number):
     input_data[j,:,0] = (input_data[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_data[j,:,1] = (input_data[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
-    plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,0,:].cpu().numpy(),'u_velocity'+str(j),'u (x-velocity component)')
+    plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,0,:].cpu().numpy(),'u_pred'+str(j),'u (x-velocity component)')
+    plotSolution(input_data[j,:,0], input_data[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_data[j,:,0]),'u_abs'+str(j),'u (x-velocity component)')
     rms = compute_rms_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
     print("RMS: "+str(j)+": ",rms)
     lrms = compute_relative_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
     print("Relative RMS: "+str(j)+": ",lrms)
+
+    total_rms += rms
+    total_relative_rms += lrms
+
+# Compute average RMS and average relative RMS
+print("Average RMS: ", total_rms / data_number)
+print("Average Relative RMS: ", total_relative_rms / data_number)
