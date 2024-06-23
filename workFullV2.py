@@ -154,41 +154,8 @@ class CreateDataset(Dataset):
         input_data = torch.stack((x, y), dim=0)
         u = u.unsqueeze(0)  # Add extra dimension to match output shape
         return input_data, u
-
-################## Jacobi KAN Layer ##################################
-#class JacobiKANLayer2(nn.Module):
-#    def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
-#        super(JacobiKANLayer2, self).__init__()
-#        self.inputdim = input_dim
-#        self.outdim   = output_dim
-#        self.a        = a
-#        self.b        = b
-#        self.degree   = degree
-
-#        self.jacobi_coeffs = nn.Parameter(torch.empty(input_dim, output_dim, degree + 1))
         
-#        nn.init.normal_(self.jacobi_coeffs, mean=0.0, std=1/(input_dim * (degree + 1)))
-
-#    def forward(self, x):
-#        x = torch.reshape(x, (-1, self.inputdim))  # shape = (batch_size, inputdim)
-        # Since Jacobian polynomial is defined in [-1, 1]
-        # We need to normalize x to [-1, 1] using tanh
-#        x = torch.tanh(x)
-        # Initialize Jacobian polynomial tensors
-#        jacobi = torch.ones(x.shape[0], self.inputdim, self.degree + 1, device=x.device)
-#        if self.degree > 0: ## degree = 0: jacobi[:, :, 0] = 1 (already initialized) ; degree = 1: jacobi[:, :, 1] = x ; d
-#            jacobi[:, :, 1] = ((self.a-self.b) + (self.a+self.b+2) * x) / 2
-#        for i in range(2, self.degree + 1):
-#            theta_k  = (2*i+self.a+self.b)*(2*i+self.a+self.b-1) / (2*i*(i+self.a+self.b))
-#            theta_k1 = (2*i+self.a+self.b-1)*(self.a*self.a-self.b*self.b) / (2*i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
-#            theta_k2 = (i+self.a-1)*(i+self.b-1)*(2*i+self.a+self.b) / (i*(i+self.a+self.b)*(2*i+self.a+self.b-2))
-#            jacobi[:, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, i - 1].clone() - theta_k2 * jacobi[:, :, i - 2].clone()  # 2 * x * jacobi[:, :, i - 1].clone() - jacobi[:, :, i - 2].clone()
-        # Compute the Jacobian interpolation
-#        y = torch.einsum('bid,iod->bo', jacobi, self.jacobi_coeffs)  # shape = (batch_size, outdim)
-#        y = y.view(-1, self.outdim)
-#        return y
-
-######################################
+####################################################
 
 class JacobiKANLayer(nn.Module):
     def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
@@ -206,6 +173,11 @@ class JacobiKANLayer(nn.Module):
         batch_size, input_dim, num_points = x.shape
         x = x.permute(0, 2, 1).contiguous()  # shape = (batch_size, num_points, input_dim)
         x = torch.tanh(x)  # Normalize x to [-1, 1]
+
+        #x_min = x.min(dim=1, keepdim=True).values  # shape = (batch_size, 1, input_dim)
+        #x_max = x.max(dim=1, keepdim=True).values  # shape = (batch_size, 1, input_dim)
+        #epsilon = 1e-6
+        #x = 2 * (x - x_min) / (x_max - x_min + epsilon) - 1
         
         # Initialize Jacobi polynomial tensors
         jacobi = torch.ones(batch_size, num_points, self.input_dim, self.degree + 1, device=x.device)
