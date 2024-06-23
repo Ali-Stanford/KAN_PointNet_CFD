@@ -344,6 +344,12 @@ Scaling = 1.0
 model = PointNetKAN(input_channels, output_channels, scaling=Scaling)
 model = model.to(device)
 
+# The number of traibale parameter
+def count_trainable_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    
+print(f"Number of trainable parameters: {count_trainable_parameters(model)}")
+
 # Loss function and optimizer
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
