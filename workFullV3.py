@@ -362,7 +362,7 @@ for epoch in range(num_epochs):
     val_running_loss = 0.0
 
     with torch.no_grad():
-        for inputs, targets in dataloader_validation:
+        for inputs, targets in dataloader_Validation:
             inputs = inputs.to(device)
             targets = targets.to(device)
 
@@ -371,7 +371,7 @@ for epoch in range(num_epochs):
             val_running_loss += val_loss.item()
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Validation Loss: {val_running_loss:.4f}') 
-    validation_losses.append(val_running_loss / len(dataloader_validation))
+    validation_losses.append(val_running_loss / len(dataloader_Validation))
 
 plot_loss(epoch_losses,validation_losses)
 ######################################################
