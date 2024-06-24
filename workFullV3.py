@@ -57,16 +57,7 @@ y_max = np.max(input_data[:,:,1])
 input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
 input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
 
-
-
-#output_data[:,:,0] = 2*(output_data[:,:,0] - u_min)/(u_max - u_min) - 1
-#output_data[:,:,1] = 2*(output_data[:,:,1] - v_min)/(v_max - v_min) - 1
-#output_data[:,:,2] = 2*(output_data[:,:,2] - p_min)/(p_max - p_min) - 1
-
 ######## split data ########
-# Notation:
-# input_data, output_data are for training
-# input_test, output_test are for test
 
 all_indices = np.random.permutation(data_number)
 training_idx = all_indices[:int(0.9*data_number)]
@@ -135,7 +126,6 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
 #plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,2],'pressure','pressure')
 
 ####################################################
-
 def plot_loss(training_losses, validation_losses):
     plt.plot(training_losses, label='Training Loss', color='blue')
     plt.plot(validation_losses, label='Validation Loss', color='orange')
@@ -149,7 +139,6 @@ def plot_loss(training_losses, validation_losses):
     #plt.show()
 
 ####################################################
-
 class CreateDataset(Dataset):
     def __init__(self, input_data_x, input_data_y, output_data_u, output_data_v, output_data_p):
         assert input_data_x.shape == input_data_y.shape == output_data_u.shape == output_data_v.shape == output_data_p.shape, \
@@ -180,7 +169,6 @@ class CreateDataset(Dataset):
         return input_data, targets
 
 ######################################
-
 class JacobiKANLayer(nn.Module):
     def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
         super(JacobiKANLayer, self).__init__()
@@ -301,11 +289,8 @@ class PointNetKAN(nn.Module):
         return x
 
 ###################################################
-# Data
 num_samples = data_number
 num_points = 1024
-
-########################################
 
 input_train = torch.from_numpy(input_train).float()
 input_validation = torch.from_numpy(input_validation).float()
@@ -318,8 +303,8 @@ output_test = torch.from_numpy(output_test).float()
 training_dataset = CreateDataset(input_train[:,:,0],input_train[:,:,1],output_train[:,:,0],output_train[:,:,1],output_train[:,:,2])
 validation_dataset = CreateDataset(input_validation[:,:,0],input_validation[:,:,1],output_validation[:,:,0],output_validation[:,:,1],output_validation[:,:,2])
 
-Batch_Size_Train = 10 #128
-Batch_Size_Validation = 2 #10
+Batch_Size_Train = 128 #128
+Batch_Size_Validation = 100 #10
 dataloader_Train = DataLoader(training_dataset, batch_size=Batch_Size_Train, shuffle=True, drop_last=True)
 dataloader_Validation = DataLoader(validation_dataset, batch_size=Batch_Size_Validation, shuffle=True, drop_last=True)
 
@@ -335,7 +320,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 500 #1000
+num_epochs = 2000
 
 epoch_losses = []
 validation_losses = []
@@ -357,7 +342,6 @@ for epoch in range(num_epochs):
         running_loss += loss.item()
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Average Training Loss: {running_loss/len(training_idx):.8f}')
-    #epoch_losses.append(running_loss / len(dataloader_Train))
     epoch_losses.append(running_loss)
 
     # Validation loop
@@ -374,7 +358,6 @@ for epoch in range(num_epochs):
             val_running_loss += val_loss.item()
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Average Validation Loss: {val_running_loss/len(validation_idx):.8f}')
-    #validation_losses.append(val_running_loss / len(dataloader_Validation))
     validation_losses.append(val_running_loss)
 
 print()
