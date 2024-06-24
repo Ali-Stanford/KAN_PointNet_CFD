@@ -333,7 +333,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 1000
+num_epochs = 3 #1000
 
 epoch_losses = []
 validation_losses = []
@@ -425,13 +425,13 @@ for j in range(len(training_idx)):
 
     #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
-    lrms_u + = compute_relative_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
+    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
 
     rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_data[j,:,1])
-    lrms_v + = compute_relative_error(predictions.cpu().numpy(), 1, output_data[j,:,1])
+    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_data[j,:,1])
 
     rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_data[j,:,2])
-    lrms_p + = compute_relative_error(predictions.cpu().numpy(), 2, output_data[j,:,2])
+    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_data[j,:,2])
 
 print("Average RMS of Training for u: ", rms_u / len(training_idx))
 print("Average Relative of Training for u: ", rms_u / len(training_idx))
@@ -476,13 +476,13 @@ for j in range(len(test_idx)):
 
     #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_test[j,:,0])
-    lrms_u + = compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0])
+    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0])
 
     rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_test[j,:,1])
-    lrms_v + = compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1])
+    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1])
 
     rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_test[j,:,2])
-    lrms_p + = compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2])
+    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2])
 
     u_collection.append(compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0]))
     v_collection.append(compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1]))
@@ -496,19 +496,19 @@ print("Average RMS of Test for p: ", rms_p / len(test_idx))
 print("Average Relative of Test for p: ", rms_p / len(test_idx))
 
 print("Maximum relative error of test for u: ", max(u_collection))
-print("Index: ",u_collection.index(max(u_collection))
+print("Index: ",u_collection.index(max(u_collection)))
 
 print("Maximum relative error of test for v: ", max(v_collection))
-print("Index: ",v_collection.index(max(p_collection))
+print("Index: ",v_collection.index(max(p_collection)))
 
 print("Maximum relative error of test for p: ", max(p_collection))
-print("Index: ",p_collection.index(max(v_collection))
+print("Index: ",p_collection.index(max(v_collection)))
 
 print("Minimum relative error of test for u: ", min(u_collection))
-print("Index: ",u_collection.index(min(u_collection))
+print("Index: ",u_collection.index(min(u_collection)))
 
 print("Minimum relative error of test for v: ", min(v_collection))
-print("Index: ",v_collection.index(min(v_collection))
+print("Index: ",v_collection.index(min(v_collection)))
 
 print("Minimum relative error of test for p: ", min(p_collection))
-print("Index: ",p_collection.index(min(p_collection))
+print("Index: ",p_collection.index(min(p_collection)))
