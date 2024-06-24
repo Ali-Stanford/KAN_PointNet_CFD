@@ -138,7 +138,7 @@ def plot_loss(training_losses, validation_losses):
     plt.title('Training and Validation Losses')
     plt.legend()
     plt.savefig('loss.png', dpi=300)
-    plt.clf() 
+    plt.clf()
     #plt.show()
 
 ####################################################
@@ -317,9 +317,10 @@ output_test = torch.from_numpy(output_test).float()
 training_dataset = CreateDataset(input_train[:,:,0],input_train[:,:,1],output_train[:,:,0],output_train[:,:,1],output_train[:,:,2])
 validation_dataset = CreateDataset(input_validation[:,:,0],input_validation[:,:,1],output_validation[:,:,0],output_validation[:,:,1],output_validation[:,:,2])
 
-Batch_Size = 128
-dataloader_Train = DataLoader(training_dataset, batch_size=Batch_Size, shuffle=True, drop_last=True)
-dataloader_Validation = DataLoader(validation_dataset, batch_size=Batch_Size, shuffle=True, drop_last=True)
+Batch_Size_Train = 128
+Batch_Size_Validation = 10
+dataloader_Train = DataLoader(training_dataset, batch_size=Batch_Size_Train, shuffle=True, drop_last=True)
+dataloader_Validation = DataLoader(validation_dataset, batch_size=Batch_Size_Validation, shuffle=True, drop_last=True)
 
 # Instantiate the model
 input_channels = 2 #x and y
@@ -354,11 +355,11 @@ for epoch in range(num_epochs):
 
         running_loss += loss.item()
 
-    print(f'Epoch [{epoch+1}/{num_epochs}], Training Loss: {running_loss:.4f}') 
+    print(f'Epoch [{epoch+1}/{num_epochs}], Training Loss: {running_loss:.4f}')
     epoch_losses.append(running_loss / len(dataloader_Train))
-    
+
     # Validation loop
-    model.eval() 
+    model.eval()
     val_running_loss = 0.0
 
     with torch.no_grad():
@@ -370,7 +371,7 @@ for epoch in range(num_epochs):
             val_loss = criterion(outputs, targets)
             val_running_loss += val_loss.item()
 
-    print(f'Epoch [{epoch+1}/{num_epochs}], Validation Loss: {val_running_loss:.4f}') 
+    print(f'Epoch [{epoch+1}/{num_epochs}], Validation Loss: {val_running_loss:.4f}')
     validation_losses.append(val_running_loss / len(dataloader_Validation))
 
 plot_loss(epoch_losses,validation_losses)
