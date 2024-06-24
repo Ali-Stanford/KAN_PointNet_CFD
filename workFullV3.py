@@ -317,8 +317,8 @@ output_test = torch.from_numpy(output_test).float()
 training_dataset = CreateDataset(input_train[:,:,0],input_train[:,:,1],output_train[:,:,0],output_train[:,:,1],output_train[:,:,2])
 validation_dataset = CreateDataset(input_validation[:,:,0],input_validation[:,:,1],output_validation[:,:,0],output_validation[:,:,1],output_validation[:,:,2])
 
-Batch_Size_Train = 128
-Batch_Size_Validation = 10
+Batch_Size_Train = 10 #128
+Batch_Size_Validation = 2 #10
 dataloader_Train = DataLoader(training_dataset, batch_size=Batch_Size_Train, shuffle=True, drop_last=True)
 dataloader_Validation = DataLoader(validation_dataset, batch_size=Batch_Size_Validation, shuffle=True, drop_last=True)
 
@@ -334,7 +334,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 3 #1000
+num_epochs = 1 #3 #1000
 
 epoch_losses = []
 validation_losses = []
@@ -412,27 +412,28 @@ for j in range(len(training_idx)):
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
     #Plot
-    plotSolution(input_train[j,:,0], input_train[j,:,1], predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
-    plotSolution(input_train[j,:,0], input_train[j,:,1], output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
-    plotSolution(input_train[j,:,0], input_train[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0]),'u_abs_train'+str(j),'u')
 
-    plotSolution(input_train[j,:,0], input_train[j,:,1], predictions[0,1,:].cpu().numpy(),'v_pred_train'+str(j),'v')
-    plotSolution(input_train[j,:,0], input_train[j,:,1], output_train[j,:,1].cpu().numpy(),'v_truth_train'+str(j),'v')
-    plotSolution(input_train[j,:,0], input_train[j,:,1], np.abs(predictions[0,1,:].cpu().numpy()-output_train[j,:,1]),'v_abs_train'+str(j),'v')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0].cpu().numpy()),'u_abs_train'+str(j),'u')
 
-    plotSolution(input_train[j,:,0], input_train[j,:,1], predictions[0,2,:].cpu().numpy(),'p_pred_train'+str(j),'p')
-    plotSolution(input_train[j,:,0], input_train[j,:,1], output_train[j,:,2].cpu().numpy(),'p_truth_train'+str(j),'p')
-    plotSolution(input_train[j,:,0], input_train[j,:,1], np.abs(predictions[0,2,:].cpu().numpy()-output_train[j,:,2]),'p_abs_train'+str(j),'p')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,1,:].cpu().numpy(),'v_pred_train'+str(j),'v')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,1].cpu().numpy(),'v_truth_train'+str(j),'v')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,1,:].cpu().numpy()-output_train[j,:,1].cpu().numpy()),'v_abs_train'+str(j),'v')
+
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,2,:].cpu().numpy(),'p_pred_train'+str(j),'p')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,2].cpu().numpy(),'p_truth_train'+str(j),'p')
+    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_train[j,:,2].cpu().numpy()),'p_abs_train'+str(j),'p')
 
     #Error Analysis
-    rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_train[j,:,0])
-    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_train[j,:,0])
+    rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_train[j,:,0].cpu().numpy())
+    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_train[j,:,0].cpu().numpy())
 
-    rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_train[j,:,1])
-    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_train[j,:,1])
+    rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_train[j,:,1].cpu().numpy())
+    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_train[j,:,1].cpu().numpy())
 
-    rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_train[j,:,2])
-    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_train[j,:,2])
+    rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_train[j,:,2].cpu().numpy())
+    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_train[j,:,2].cpu().numpy())
 
 print("Average RMS of Training for u: ", rms_u / len(training_idx))
 print("Average Relative of Training for u: ", rms_u / len(training_idx))
@@ -441,6 +442,7 @@ print("Average Relative of Training for v: ", rms_v / len(training_idx))
 print("Average RMS of Training for p: ", rms_p / len(training_idx))
 print("Average Relative of Training for p: ", rms_p / len(training_idx))
 
+print("############################################################")
 ############################# Error Analysis of Test ##########################
 rms_u, rms_v, rms_p = 0.0, 0.0, 0.0
 lrms_u, lrms_v, lrms_p = 0.0, 0.0, 0.0
@@ -461,33 +463,33 @@ for j in range(len(test_idx)):
     #Back to usual X and Y
     input_test[j,:,0] = (input_test[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_test[j,:,1] = (input_test[j,:,1] + 1)*(y_max - y_min)/2 + y_min
-
+  
     #Plot
-    plotSolution(input_test[j,:,0], input_test[j,:,1], predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),'u')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),'u')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_test[j,:,0]),'u_abs_test'+str(j),'u')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),'u')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),'u')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_test[j,:,0].cpu().numpy()),'u_abs_test'+str(j),'u')
 
-    plotSolution(input_test[j,:,0], input_test[j,:,1], predictions[0,1,:].cpu().numpy(),'v_pred_test'+str(j),'v')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], output_test[j,:,1].cpu().numpy(),'v_truth_test'+str(j),'v')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,1,:].cpu().numpy()-output_test[j,:,1]),'v_abs_test'+str(j),'v')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,1,:].cpu().numpy(),'v_pred_test'+str(j),'v')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,1].cpu().numpy(),'v_truth_test'+str(j),'v')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,1,:].cpu().numpy()-output_test[j,:,1].cpu().numpy()),'v_abs_test'+str(j),'v')
 
-    plotSolution(input_test[j,:,0], input_test[j,:,1], predictions[0,2,:].cpu().numpy(),'p_pred_test'+str(j),'p')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], output_test[j,:,2].cpu().numpy(),'p_truth_test'+str(j),'p')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,2,:].cpu().numpy()-output_test[j,:,2]),'p_abs_test'+str(j),'p')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,2,:].cpu().numpy(),'p_pred_test'+str(j),'p')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,2].cpu().numpy(),'p_truth_test'+str(j),'p')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_test[j,:,2].cpu().numpy()),'p_abs_test'+str(j),'p')
 
     #Error Analysis
-    rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_test[j,:,0])
-    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0])
+    rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy())
+    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy())
 
-    rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_test[j,:,1])
-    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1])
+    rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_test[j,:,1].cpu().numpy())
+    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1].cpu().numpy())
 
-    rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_test[j,:,2])
-    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2])
+    rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy())
+    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy())
 
-    u_collection.append(compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0]))
-    v_collection.append(compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1]))
-    p_collection.append(compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2]))
+    u_collection.append(compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy()))
+    v_collection.append(compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1].cpu().numpy()))
+    p_collection.append(compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy()))
 
 print("Average RMS of Test for u: ", rms_u / len(test_idx))
 print("Average Relative of Test for u: ", rms_u / len(test_idx))
@@ -500,10 +502,10 @@ print("Maximum relative error of test for u: ", max(u_collection))
 print("Index: ",u_collection.index(max(u_collection)))
 
 print("Maximum relative error of test for v: ", max(v_collection))
-print("Index: ",v_collection.index(max(p_collection)))
+print("Index: ",v_collection.index(max(v_collection)))
 
 print("Maximum relative error of test for p: ", max(p_collection))
-print("Index: ",p_collection.index(max(v_collection)))
+print("Index: ",p_collection.index(max(p_collection)))
 
 print("Minimum relative error of test for u: ", min(u_collection))
 print("Index: ",u_collection.index(min(u_collection)))
