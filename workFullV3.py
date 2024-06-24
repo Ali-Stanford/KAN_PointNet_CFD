@@ -27,7 +27,7 @@ else:
 
 torch.manual_seed(0)
 
-Data = np.load('FullData.npy')
+Data = np.load('Data.npy')
 data_number = Data.shape[0]
 
 print('Number of data is:')
@@ -334,7 +334,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 1 #3 #1000
+num_epochs = 50 #1000
 
 epoch_losses = []
 validation_losses = []
@@ -355,8 +355,9 @@ for epoch in range(num_epochs):
 
         running_loss += loss.item()
 
-    print(f'Epoch [{epoch+1}/{num_epochs}], Training Loss: {running_loss:.4f}')
-    epoch_losses.append(running_loss / len(dataloader_Train))
+    print(f'Epoch [{epoch+1}/{num_epochs}], Average Training Loss: {running_loss/len(training_idx):.8f}')
+    #epoch_losses.append(running_loss / len(dataloader_Train))
+    epoch_losses.append(running_loss)
 
     # Validation loop
     model.eval()
@@ -371,8 +372,14 @@ for epoch in range(num_epochs):
             val_loss = criterion(outputs, targets)
             val_running_loss += val_loss.item()
 
-    print(f'Epoch [{epoch+1}/{num_epochs}], Validation Loss: {val_running_loss:.4f}')
-    validation_losses.append(val_running_loss / len(dataloader_Validation))
+    print(f'Epoch [{epoch+1}/{num_epochs}], Average Validation Loss: {val_running_loss/len(validation_idx):.8f}')
+    #validation_losses.append(val_running_loss / len(dataloader_Validation))
+    validation_losses.append(val_running_loss)
+
+print()
+
+validation_losses = [loss / len(validation_idx) for loss in validation_losses]
+epoch_losses = [loss / len(training_idx) for loss in epoch_losses]
 
 plot_loss(epoch_losses,validation_losses)
 ######################################################
@@ -412,7 +419,6 @@ for j in range(len(training_idx)):
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
     #Plot
-
     plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
     plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
     plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0].cpu().numpy()),'u_abs_train'+str(j),'u')
@@ -437,12 +443,16 @@ for j in range(len(training_idx)):
 
 print("Average RMS of Training for u: ", rms_u / len(training_idx))
 print("Average Relative of Training for u: ", rms_u / len(training_idx))
+print()
 print("Average RMS of Training for v: ", rms_v / len(training_idx))
 print("Average Relative of Training for v: ", rms_v / len(training_idx))
+print()
 print("Average RMS of Training for p: ", rms_p / len(training_idx))
 print("Average Relative of Training for p: ", rms_p / len(training_idx))
 
+print()
 print("############################################################")
+print()
 ############################# Error Analysis of Test ##########################
 rms_u, rms_v, rms_p = 0.0, 0.0, 0.0
 lrms_u, lrms_v, lrms_p = 0.0, 0.0, 0.0
@@ -492,26 +502,28 @@ for j in range(len(test_idx)):
     p_collection.append(compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy()))
 
 print("Average RMS of Test for u: ", rms_u / len(test_idx))
-print("Average Relative of Test for u: ", rms_u / len(test_idx))
+print("Average Relative of Test for u: ", lrms_u / len(test_idx))
+print()
 print("Average RMS of Test for v: ", rms_v / len(test_idx))
-print("Average Relative of Test for v: ", rms_v / len(test_idx))
+print("Average Relative of Test for v: ", lrms_v / len(test_idx))
+print()
 print("Average RMS of Test for p: ", rms_p / len(test_idx))
-print("Average Relative of Test for p: ", rms_p / len(test_idx))
-
+print("Average Relative of Test for p: ", lrms_p / len(test_idx))
+print()
 print("Maximum relative error of test for u: ", max(u_collection))
 print("Index: ",u_collection.index(max(u_collection)))
-
+print()
 print("Maximum relative error of test for v: ", max(v_collection))
 print("Index: ",v_collection.index(max(v_collection)))
-
+print()
 print("Maximum relative error of test for p: ", max(p_collection))
 print("Index: ",p_collection.index(max(p_collection)))
-
+print()
 print("Minimum relative error of test for u: ", min(u_collection))
 print("Index: ",u_collection.index(min(u_collection)))
-
+print()
 print("Minimum relative error of test for v: ", min(v_collection))
 print("Index: ",v_collection.index(min(v_collection)))
-
+print()
 print("Minimum relative error of test for p: ", min(p_collection))
 print("Index: ",p_collection.index(min(p_collection)))
