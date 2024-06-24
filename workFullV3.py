@@ -191,6 +191,11 @@ class JacobiKANLayer(nn.Module):
         x = x.permute(0, 2, 1).contiguous()  # shape = (batch_size, num_points, input_dim)
         x = torch.tanh(x)  # Normalize x to [-1, 1]
 
+        #x_min = x.min(dim=1, keepdim=True).values  # shape = (batch_size, 1, input_dim)
+        #x_max = x.max(dim=1, keepdim=True).values  # shape = (batch_size, 1, input_dim)
+        #epsilon = 1e-6
+        #x = 2 * (x - x_min) / (x_max - x_min + epsilon) - 1
+
         # Initialize Jacobi polynomial tensors
         jacobi = torch.ones(batch_size, num_points, self.input_dim, self.degree + 1, device=x.device)
 
@@ -442,13 +447,13 @@ for j in range(len(training_idx)):
     lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_train[j,:,2].cpu().numpy())
 
 print("Average RMS of Training for u: ", rms_u / len(training_idx))
-print("Average Relative of Training for u: ", rms_u / len(training_idx))
+print("Average Relative of Training for u: ", lrms_u / len(training_idx))
 print()
 print("Average RMS of Training for v: ", rms_v / len(training_idx))
-print("Average Relative of Training for v: ", rms_v / len(training_idx))
+print("Average Relative of Training for v: ", lrms_v / len(training_idx))
 print()
 print("Average RMS of Training for p: ", rms_p / len(training_idx))
-print("Average Relative of Training for p: ", rms_p / len(training_idx))
+print("Average Relative of Training for p: ", lrms_p / len(training_idx))
 
 print()
 print("############################################################")
