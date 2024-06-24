@@ -57,16 +57,7 @@ y_max = np.max(input_data[:,:,1])
 input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
 input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
 
-u_min = np.min(output_data[:,:,0])
-u_max = np.max(output_data[:,:,0])
-v_min = np.min(output_data[:,:,1])
-v_max = np.max(output_data[:,:,1])
-p_min = np.min(output_data[:,:,2])
-p_max = np.max(output_data[:,:,2])
 
-#output_data[:,:,0] = (output_data[:,:,0] - u_min)/(u_max - u_min)
-#output_data[:,:,1] = (output_data[:,:,1] - v_min)/(v_max - v_min)
-#output_data[:,:,2] = (output_data[:,:,2] - p_min)/(p_max - p_min)
 
 #output_data[:,:,0] = 2*(output_data[:,:,0] - u_min)/(u_max - u_min) - 1
 #output_data[:,:,1] = 2*(output_data[:,:,1] - v_min)/(v_max - v_min) - 1
@@ -84,6 +75,22 @@ test_idx = all_indices[int(0.95*data_number):]
 
 input_train, input_validation, input_test = input_data[training_idx,:], input_data[validation_idx,:], input_data[test_idx,:]
 output_train, output_validation, output_test = output_data[training_idx,:], output_data[validation_idx,:], output_data[test_idx,:]
+
+##### Normalize Train and Valditation Output #######
+u_min = np.min(output_train[:,:,0])
+u_max = np.max(output_train[:,:,0])
+v_min = np.min(output_train[:,:,1])
+v_max = np.max(output_train[:,:,1])
+p_min = np.min(output_train[:,:,2])
+p_max = np.max(output_train[:,:,2])
+
+output_train[:,:,0] = (output_train[:,:,0] - u_min)/(u_max - u_min)
+output_train[:,:,1] = (output_train[:,:,1] - v_min)/(v_max - v_min)
+output_train[:,:,2] = (output_train[:,:,2] - p_min)/(p_max - p_min)
+
+output_validation[:,:,0] = (output_validation[:,:,0] - u_min)/(u_max - u_min)
+output_validation[:,:,1] = (output_validation[:,:,1] - v_min)/(v_max - v_min)
+output_validation[:,:,2] = (output_validation[:,:,2] - p_min)/(p_max - p_min)
 
 ##### Data visualization #####
 
@@ -298,17 +305,6 @@ class PointNetKAN(nn.Module):
 num_samples = data_number
 num_points = 1024
 
-#input_data_x = torch.from_numpy(input_data[:,:,0]).float()
-#input_data_y = torch.from_numpy(input_data[:,:,1]).float()
-#output_data_u = torch.from_numpy(output_data[:,:,0]).float()
-#output_data_v = torch.from_numpy(output_data[:,:,1]).float()
-#output_data_p = torch.from_numpy(output_data[:,:,2]).float()
-
-#Batch_Size = 128 #20
-# Create dataset and dataloader
-#dataset = CreateDataset(input_data_x, input_data_y, output_data_u, output_data_v, output_data_p)
-#dataloader = DataLoader(dataset, batch_size=Batch_Size, shuffle=True, drop_last=True)
-
 ########################################
 
 input_train = torch.from_numpy(input_train).float()
@@ -339,7 +335,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 50 #1000
+num_epochs = 500 #1000
 
 epoch_losses = []
 validation_losses = []
@@ -423,6 +419,15 @@ for j in range(len(training_idx)):
     input_train[j,:,0] = (input_train[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
+    #Back to physical domain
+    predictions[0,0,:] = predictions[0,0,:]*(u_max - u_min) + u_min
+    predictions[0,1,:] = predictions[0,1,:]*(v_max - v_min) + v_min
+    predictions[0,2,:] = predictions[0,2,:]*(p_max - p_min) + p_min
+
+    output_train[j,:,0] = output_train[j,:,0]*(u_max - u_min) + u_min
+    output_train[j,:,1] = output_train[j,:,1]*(v_max - v_min) + v_min
+    output_train[j,:,2] = output_train[j,:,2]*(p_max - p_min) + p_min
+
     #Plot
     plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
     plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
@@ -479,6 +484,10 @@ for j in range(len(test_idx)):
     input_test[j,:,0] = (input_test[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_test[j,:,1] = (input_test[j,:,1] + 1)*(y_max - y_min)/2 + y_min
   
+    predictions[0,0,:] = predictions[0,0,:]*(u_max - u_min) + u_min
+    predictions[0,1,:] = predictions[0,1,:]*(v_max - v_min) + v_min
+    predictions[0,2,:] = predictions[0,2,:]*(p_max - p_min) + p_min
+
     #Plot
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),'u')
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),'u')
