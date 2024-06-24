@@ -400,7 +400,7 @@ lrms_u, lrms_v, lrms_p = 0.0, 0.0, 0.0
 
 for j in range(len(training_idx)):
     model.eval()
-    input_data_pred = torch.stack((torch.from_numpy(input_train[j,:,0]).float(), torch.from_numpy(input_train[j,:,1]).float()), dim=0)
+    input_data_pred = torch.stack((input_train[j,:,0].float(), input_train[j,:,1].float()), dim=0)
     input_data_pred = input_data_pred.unsqueeze(0)
 
     with torch.no_grad():
@@ -412,27 +412,27 @@ for j in range(len(training_idx)):
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
     #Plot
-    plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
-    plotSolution(input_data[j,:,0], input_data[j,:,1], output_train[0,0,:].cpu().numpy(),'u_truth_train'+str(j),'u')
-    plotSolution(input_data[j,:,0], input_data[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_data[j,:,0]),'u_abs_train'+str(j),'u')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0]),'u_abs_train'+str(j),'u')
 
-    plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,1,:].cpu().numpy(),'v_pred_train'+str(j),'v')
-    plotSolution(input_data[j,:,0], input_data[j,:,1], output_train[0,1,:].cpu().numpy(),'v_truth_train'+str(j),'v')
-    plotSolution(input_data[j,:,0], input_data[j,:,1], np.abs(predictions[0,1,:].cpu().numpy()-output_data[j,:,1]),'v_abs_train'+str(j),'v')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], predictions[0,1,:].cpu().numpy(),'v_pred_train'+str(j),'v')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], output_train[j,:,1].cpu().numpy(),'v_truth_train'+str(j),'v')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], np.abs(predictions[0,1,:].cpu().numpy()-output_train[j,:,1]),'v_abs_train'+str(j),'v')
 
-    plotSolution(input_data[j,:,0], input_data[j,:,1], predictions[0,2,:].cpu().numpy(),'p_pred_train'+str(j),'p')
-    plotSolution(input_data[j,:,0], input_data[j,:,1], output_train[0,2,:].cpu().numpy(),'p_truth_train'+str(j),'p')
-    plotSolution(input_data[j,:,0], input_data[j,:,1], np.abs(predictions[0,2,:].cpu().numpy()-output_data[j,:,2]),'p_abs_train'+str(j),'p')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], predictions[0,2,:].cpu().numpy(),'p_pred_train'+str(j),'p')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], output_train[j,:,2].cpu().numpy(),'p_truth_train'+str(j),'p')
+    plotSolution(input_train[j,:,0], input_train[j,:,1], np.abs(predictions[0,2,:].cpu().numpy()-output_train[j,:,2]),'p_abs_train'+str(j),'p')
 
     #Error Analysis
-    rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
-    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_data[j,:,0])
+    rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_train[j,:,0])
+    lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_train[j,:,0])
 
-    rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_data[j,:,1])
-    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_data[j,:,1])
+    rms_v += compute_rms_error(predictions.cpu().numpy(), 1, output_train[j,:,1])
+    lrms_v += compute_relative_error(predictions.cpu().numpy(), 1, output_train[j,:,1])
 
-    rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_data[j,:,2])
-    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_data[j,:,2])
+    rms_p += compute_rms_error(predictions.cpu().numpy(), 2, output_train[j,:,2])
+    lrms_p += compute_relative_error(predictions.cpu().numpy(), 2, output_train[j,:,2])
 
 print("Average RMS of Training for u: ", rms_u / len(training_idx))
 print("Average Relative of Training for u: ", rms_u / len(training_idx))
@@ -451,7 +451,7 @@ p_collection = []
 
 for j in range(len(test_idx)):
     model.eval()
-    input_data_pred = torch.stack((torch.from_numpy(input_test[j,:,0]).float(), torch.from_numpy(input_test[j,:,1]).float()), dim=0)
+    input_data_pred = torch.stack((input_test[j,:,0].float(), input_test[j,:,1].float()), dim=0)
     input_data_pred = input_data_pred.unsqueeze(0)
 
     with torch.no_grad():
@@ -464,16 +464,16 @@ for j in range(len(test_idx)):
 
     #Plot
     plotSolution(input_test[j,:,0], input_test[j,:,1], predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),'u')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], output_train[0,0,:].cpu().numpy(),'u_truth_test'+str(j),'u')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_data[j,:,0]),'u_abs_test'+str(j),'u')
+    plotSolution(input_test[j,:,0], input_test[j,:,1], output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),'u')
+    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,0,:].cpu().numpy()-output_test[j,:,0]),'u_abs_test'+str(j),'u')
 
     plotSolution(input_test[j,:,0], input_test[j,:,1], predictions[0,1,:].cpu().numpy(),'v_pred_test'+str(j),'v')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], output_train[0,1,:].cpu().numpy(),'v_truth_test'+str(j),'v')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,1,:].cpu().numpy()-output_data[j,:,1]),'v_abs_test'+str(j),'v')
+    plotSolution(input_test[j,:,0], input_test[j,:,1], output_test[j,:,1].cpu().numpy(),'v_truth_test'+str(j),'v')
+    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,1,:].cpu().numpy()-output_test[j,:,1]),'v_abs_test'+str(j),'v')
 
     plotSolution(input_test[j,:,0], input_test[j,:,1], predictions[0,2,:].cpu().numpy(),'p_pred_test'+str(j),'p')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], output_train[0,2,:].cpu().numpy(),'p_truth_test'+str(j),'p')
-    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,2,:].cpu().numpy()-output_data[j,:,2]),'p_abs_test'+str(j),'p')
+    plotSolution(input_test[j,:,0], input_test[j,:,1], output_test[j,:,2].cpu().numpy(),'p_truth_test'+str(j),'p')
+    plotSolution(input_test[j,:,0], input_test[j,:,1], np.abs(predictions[0,2,:].cpu().numpy()-output_test[j,:,2]),'p_abs_test'+str(j),'p')
 
     #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_test[j,:,0])
