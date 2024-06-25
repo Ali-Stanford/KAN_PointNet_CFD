@@ -371,6 +371,14 @@ print()
 validation_losses = [loss / len(validation_idx) for loss in validation_losses]
 epoch_losses = [loss / len(training_idx) for loss in epoch_losses]
 
+with open('validation_losses.txt', 'w') as file:
+    for loss in validation_losses:
+        file.write(f"{loss}\n")
+
+with open('epoch_losses.txt', 'w') as file:
+    for loss in epoch_losses:
+        file.write(f"{loss}\n")
+
 plot_loss(epoch_losses,validation_losses)
 ######################################################
 
