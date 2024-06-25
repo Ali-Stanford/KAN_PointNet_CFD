@@ -59,9 +59,9 @@ input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
 
 ######## split data ########
 all_indices = np.random.permutation(data_number)
-training_idx = all_indices[:int(0.9*data_number)]
-validation_idx = all_indices[int(0.9*data_number):int(0.95*data_number)]
-test_idx = all_indices[int(0.95*data_number):]
+training_idx = all_indices[:int(0.8*data_number)]
+validation_idx = all_indices[int(0.8*data_number):int(0.9*data_number)]
+test_idx = all_indices[int(0.9*data_number):]
 
 input_train, input_validation, input_test = input_data[training_idx,:], input_data[validation_idx,:], input_data[test_idx,:]
 output_train, output_validation, output_test = output_data[training_idx,:], output_data[validation_idx,:], output_data[test_idx,:]
@@ -96,7 +96,7 @@ def plot2DPointCloud(x_coord,y_coord,file_name):
     plt.ylim([y_lower, y_upper])
     plt.gca().set_aspect('equal', adjustable='box')
     plt.savefig(file_name+'.png',dpi=300)
-    #plt.savefig(file_name+'.eps') #You can use this line for saving figures in EPS format
+    plt.savefig(file_name+'.eps') 
     plt.clf()
     #plt.show()
 
@@ -114,7 +114,7 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
     plt.gca().set_aspect('equal', adjustable='box')
     cbar= plt.colorbar()
     plt.savefig(file_name+'.png',dpi=300)
-    #plt.savefig(file_name+'.eps') #You can use this line for saving figures in EPS format
+    plt.savefig(file_name+'.eps') 
     plt.clf()
     #plt.show()
 
@@ -135,6 +135,7 @@ def plot_loss(training_losses, validation_losses):
     plt.title('Training and Validation Losses')
     plt.legend()
     plt.savefig('loss.png', dpi=300)
+    #plt.savefig('loss.eps')
     plt.clf()
     #plt.show()
 
@@ -477,17 +478,17 @@ for j in range(len(test_idx)):
     predictions[0,2,:] = predictions[0,2,:]*(p_max - p_min) + p_min
 
     #Plot
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),'u')
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),'u')
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_test[j,:,0].cpu().numpy()),'u_abs_test'+str(j),'u')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),r'Prediction of velocity $u$ (m/s)')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),r'Ground truth of velocity $u$ (m/s)')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_test[j,:,0].cpu().numpy()),'u_abs_test'+str(j),r'Absolute error of velocity $u$ (m/s)')
 
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,1,:].cpu().numpy(),'v_pred_test'+str(j),'v')
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,1].cpu().numpy(),'v_truth_test'+str(j),'v')
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,1,:].cpu().numpy()-output_test[j,:,1].cpu().numpy()),'v_abs_test'+str(j),'v')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,1,:].cpu().numpy(),'v_pred_test'+str(j),r'Prediction of velocity $v$ (m/s)')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,1].cpu().numpy(),'v_truth_test'+str(j),r'Ground truth of velocity $v$ (m/s)')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,1,:].cpu().numpy()-output_test[j,:,1].cpu().numpy()),'v_abs_test'+str(j),r'Absolute error of velocity $v$ (m/s)')
 
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,2,:].cpu().numpy(),'p_pred_test'+str(j),'p')
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,2].cpu().numpy(),'p_truth_test'+str(j),'p')
-    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_test[j,:,2].cpu().numpy()),'p_abs_test'+str(j),'p')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,2,:].cpu().numpy(),'p_pred_test'+str(j),r'Prediction of gauge pressure (Pa)')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,2].cpu().numpy(),'p_truth_test'+str(j),r'Ground truth of gauge pressure (Pa)')
+    plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_test[j,:,2].cpu().numpy()),'p_abs_test'+str(j),r'Absolute error of gauge pressure (Pa)')
 
     #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy())
