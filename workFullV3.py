@@ -97,6 +97,7 @@ def plot2DPointCloud(x_coord,y_coord,file_name):
     plt.gca().set_aspect('equal', adjustable='box')
     plt.savefig(file_name+'.png',dpi=300)
     plt.savefig(file_name+'.eps') 
+    plt.savefig(file_name+'.pdf',format='pdf')
     plt.clf()
     #plt.show()
 
@@ -115,6 +116,7 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
     cbar= plt.colorbar()
     plt.savefig(file_name+'.png',dpi=300)
     plt.savefig(file_name+'.eps') 
+    plt.savefig(file_name+'.pdf',format='pdf')
     plt.clf()
     #plt.show()
 
