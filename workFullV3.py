@@ -203,10 +203,16 @@ class JacobiKANLayer(nn.Module):
             jacobi[:, :, :, 1] = ((self.a - self.b) + (self.a + self.b + 2) * x) / 2
 
         for i in range(2, self.degree + 1):
-            theta_k = (2 * i + self.a + self.b) * (2 * i + self.a + self.b - 1) / (2 * i * (i + self.a + self.b))
-            theta_k1 = (2 * i + self.a + self.b - 1) * (self.a ** 2 - self.b ** 2) / (2 * i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
-            theta_k2 = (i + self.a - 1) * (i + self.b - 1) * (2 * i + self.a + self.b) / (i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
-            jacobi[:, :, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, :, i - 1].clone() - theta_k2 * jacobi[:, :, :, i - 2].clone()
+            A = (2*i + self.a + self.b - 1)*(2*i + self.a + self.b)/((2*i) * (i + self.a + self.b))
+            B = (2*i + self.a + self.b - 1)*(self.a**2 - self.b**2)/((2*i)*(i + self.a + self.b)*(2*i+self.a+self.b-2))
+            C = -2*(i + self.a -1)*(i + self.b -1)*(2*i + self.a + self.b)/((2*i)*(i + self.a + self.b)*(2*i + self.a + self.b -2))
+            jacobi[:, :, :, i] = (A*x + B)*jacobi[:, :, :, i-1].clone() + C*jacobi[:, :, :, i-2].clone()
+
+        #for i in range(2, self.degree + 1):
+        #    theta_k = (2 * i + self.a + self.b) * (2 * i + self.a + self.b - 1) / (2 * i * (i + self.a + self.b))
+        #    theta_k1 = (2 * i + self.a + self.b - 1) * (self.a ** 2 - self.b ** 2) / (2 * i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
+        #    theta_k2 = (i + self.a - 1) * (i + self.b - 1) * (2 * i + self.a + self.b) / (i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
+        #    jacobi[:, :, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, :, i - 1].clone() - theta_k2 * jacobi[:, :, :, i - 2].clone()
 
         # Compute the Jacobi interpolation
         jacobi = jacobi.permute(0, 2, 3, 1)  # shape = (batch_size, input_dim, degree + 1, num_points)
