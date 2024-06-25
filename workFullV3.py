@@ -27,7 +27,7 @@ else:
 
 torch.manual_seed(0)
 
-Data = np.load('Data.npy')
+Data = np.load('FullData.npy')
 data_number = Data.shape[0]
 
 print('Number of data is:')
@@ -58,7 +58,6 @@ input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
 input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
 
 ######## split data ########
-
 all_indices = np.random.permutation(data_number)
 training_idx = all_indices[:int(0.9*data_number)]
 validation_idx = all_indices[int(0.9*data_number):int(0.95*data_number)]
@@ -126,6 +125,7 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
 #plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,2],'pressure','pressure')
 
 ####################################################
+
 def plot_loss(training_losses, validation_losses):
     plt.plot(training_losses, label='Training Loss', color='blue')
     plt.plot(validation_losses, label='Validation Loss', color='orange')
@@ -139,6 +139,7 @@ def plot_loss(training_losses, validation_losses):
     #plt.show()
 
 ####################################################
+
 class CreateDataset(Dataset):
     def __init__(self, input_data_x, input_data_y, output_data_u, output_data_v, output_data_p):
         assert input_data_x.shape == input_data_y.shape == output_data_u.shape == output_data_v.shape == output_data_p.shape, \
@@ -169,6 +170,7 @@ class CreateDataset(Dataset):
         return input_data, targets
 
 ######################################
+
 class JacobiKANLayer(nn.Module):
     def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
         super(JacobiKANLayer, self).__init__()
@@ -289,8 +291,11 @@ class PointNetKAN(nn.Module):
         return x
 
 ###################################################
+# Data
 num_samples = data_number
 num_points = 1024
+
+########################################
 
 input_train = torch.from_numpy(input_train).float()
 input_validation = torch.from_numpy(input_validation).float()
@@ -320,7 +325,7 @@ model = model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 2000
+num_epochs = 4000
 
 epoch_losses = []
 validation_losses = []
@@ -412,17 +417,17 @@ for j in range(len(training_idx)):
     output_train[j,:,2] = output_train[j,:,2]*(p_max - p_min) + p_min
 
     #Plot
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0].cpu().numpy()),'u_abs_train'+str(j),'u')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0].cpu().numpy()),'u_abs_train'+str(j),'u')
 
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,1,:].cpu().numpy(),'v_pred_train'+str(j),'v')
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,1].cpu().numpy(),'v_truth_train'+str(j),'v')
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,1,:].cpu().numpy()-output_train[j,:,1].cpu().numpy()),'v_abs_train'+str(j),'v')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,1,:].cpu().numpy(),'v_pred_train'+str(j),'v')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,1].cpu().numpy(),'v_truth_train'+str(j),'v')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,1,:].cpu().numpy()-output_train[j,:,1].cpu().numpy()),'v_abs_train'+str(j),'v')
 
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,2,:].cpu().numpy(),'p_pred_train'+str(j),'p')
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,2].cpu().numpy(),'p_truth_train'+str(j),'p')
-    plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_train[j,:,2].cpu().numpy()),'p_abs_train'+str(j),'p')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,2,:].cpu().numpy(),'p_pred_train'+str(j),'p')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,2].cpu().numpy(),'p_truth_train'+str(j),'p')
+    #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_train[j,:,2].cpu().numpy()),'p_abs_train'+str(j),'p')
 
     #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_train[j,:,0].cpu().numpy())
