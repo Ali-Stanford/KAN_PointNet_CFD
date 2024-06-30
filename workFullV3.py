@@ -539,6 +539,8 @@ for j in range(len(test_idx)):
     v_collection.append(compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1].cpu().numpy()))
     p_collection.append(compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy()))
 
+###################################################################
+
 print("Average RMS of Test for u: ", rms_u / len(test_idx))
 print("Average Relative of Test for u: ", lrms_u / len(test_idx))
 print()
@@ -565,3 +567,17 @@ print("Index: ",v_collection.index(min(v_collection)))
 print()
 print("Minimum relative error of test for p: ", min(p_collection))
 print("Index: ",p_collection.index(min(p_collection)))
+
+#########################################################################
+
+with open("u_collection.txt", "w") as file:
+    for item in u_collection:
+        file.write(f"{item}\n")
+
+with open("v_collection.txt", "w") as file:
+    for item in v_collection:
+        file.write(f"{item}\n")
+
+with open("p_collection.txt", "w") as file:
+    for item in p_collection:
+        file.write(f"{item}\n")
