@@ -1,4 +1,5 @@
 ######### Library #########
+import time 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -63,10 +64,14 @@ input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
 input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
 
 ######## split data ########
-all_indices = np.random.permutation(data_number)
-training_idx = all_indices[:int(0.8*data_number)]
-validation_idx = all_indices[int(0.8*data_number):int(0.9*data_number)]
-test_idx = all_indices[int(0.9*data_number):]
+#all_indices = np.random.permutation(data_number)
+#training_idx = all_indices[:int(0.8*data_number)]
+#validation_idx = all_indices[int(0.8*data_number):int(0.9*data_number)]
+#test_idx = all_indices[int(0.9*data_number):]
+
+training_idx = np.load('training_idx.npy')
+validation_idx = np.load('validation_idx.npy')
+test_idx = np.load('test_idx.npy')
 
 input_train, input_validation, input_test = input_data[training_idx,:], input_data[validation_idx,:], input_data[test_idx,:]
 output_train, output_validation, output_test = output_data[training_idx,:], output_data[validation_idx,:], output_data[test_idx,:]
@@ -328,8 +333,14 @@ Scaling = 1.0
 model = PointNetKAN(input_channels, output_channels, scaling=Scaling)
 model = model.to(device)
 
+# Calculate the number of trainable parameters
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+num_parameters = count_parameters(model)
+print(f'The number of trainable parameters in the model: {num_parameters}')
+
 # Loss function and optimizer
-# Try learning rate of 0.0005
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
@@ -338,10 +349,14 @@ num_epochs = 5000
 epoch_losses = []
 validation_losses = []
 
+total_training_time = 0
+
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
 
+    start_time = time.time() 
+ 
     for i, (inputs, targets) in enumerate(dataloader_Train):
         inputs = inputs.to(device)
         targets = targets.to(device)
@@ -353,6 +368,9 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         running_loss += loss.item()
+
+    end_time = time.time()
+    total_training_time += (end_time - start_time)
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Average Training Loss: {running_loss/len(training_idx):.8f}')
     epoch_losses.append(running_loss)
@@ -373,6 +391,8 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch+1}/{num_epochs}], Average Validation Loss: {val_running_loss/len(validation_idx):.8f}')
     validation_losses.append(val_running_loss)
 
+print()
+print(f'Total training time: {total_training_time:.2f} seconds')
 print()
 
 validation_losses = [loss / len(validation_idx) for loss in validation_losses]
