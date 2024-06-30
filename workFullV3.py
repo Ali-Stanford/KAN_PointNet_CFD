@@ -29,6 +29,7 @@ torch.manual_seed(0)
 
 Data = np.load('FullData.npy')
 data_number = Data.shape[0]
+data_number = data_number - 240
 
 print('Number of data is:')
 print(data_number)
@@ -40,12 +41,16 @@ cfd_variable = 3 # (u, v, p); which are the x-component of velocity, y-component
 input_data = zeros([data_number,point_numbers,space_variable],dtype='f')
 output_data = zeros([data_number,point_numbers,cfd_variable],dtype='f')
 
-for i in range(data_number):
-    input_data[i,:,0] = Data[i,:,0] # x coordinate (m)
-    input_data[i,:,1] = Data[i,:,1] # y coordinate (m)
-    output_data[i,:,0] = Data[i,:,3] # u (m/s)
-    output_data[i,:,1] = Data[i,:,4] # v (m/s)
-    output_data[i,:,2] = Data[i,:,2] # p (Pa)
+count = 0 
+
+for i in range(data_number+240):
+    if(i<1615 or i>1854):
+        input_data[count,:,0] = Data[i,:,0] # x coordinate (m)
+        input_data[count,:,1] = Data[i,:,1] # y coordinate (m)
+        output_data[count,:,0] = Data[i,:,3] # u (m/s)
+        output_data[count,:,1] = Data[i,:,4] # v (m/s)
+        output_data[count,:,2] = Data[i,:,2] # p (Pa)
+        count += 1
 
 ################# Maybe need to normalize when we consider three of them #################
 
@@ -74,13 +79,13 @@ v_max = np.max(output_train[:,:,1])
 p_min = np.min(output_train[:,:,2])
 p_max = np.max(output_train[:,:,2])
 
-output_train[:,:,0] = (output_train[:,:,0] - u_min)/(u_max - u_min)
-output_train[:,:,1] = (output_train[:,:,1] - v_min)/(v_max - v_min)
-output_train[:,:,2] = (output_train[:,:,2] - p_min)/(p_max - p_min)
+output_train[:,:,0] = 2*(output_train[:,:,0] - u_min)/(u_max - u_min) - 1
+output_train[:,:,1] = 2*(output_train[:,:,1] - v_min)/(v_max - v_min) - 1
+output_train[:,:,2] = 2*(output_train[:,:,2] - p_min)/(p_max - p_min) - 1
 
-output_validation[:,:,0] = (output_validation[:,:,0] - u_min)/(u_max - u_min)
-output_validation[:,:,1] = (output_validation[:,:,1] - v_min)/(v_max - v_min)
-output_validation[:,:,2] = (output_validation[:,:,2] - p_min)/(p_max - p_min)
+output_validation[:,:,0] = 2*(output_validation[:,:,0] - u_min)/(u_max - u_min) - 1
+output_validation[:,:,1] = 2*(output_validation[:,:,1] - v_min)/(v_max - v_min) - 1
+output_validation[:,:,2] = 2*(output_validation[:,:,2] - p_min)/(p_max - p_min) - 1
 
 ##### Data visualization #####
 
@@ -96,7 +101,7 @@ def plot2DPointCloud(x_coord,y_coord,file_name):
     plt.ylim([y_lower, y_upper])
     plt.gca().set_aspect('equal', adjustable='box')
     plt.savefig(file_name+'.png',dpi=300)
-    plt.savefig(file_name+'.eps') 
+    plt.savefig(file_name+'.eps')
     plt.savefig(file_name+'.pdf',format='pdf')
     plt.clf()
     #plt.show()
@@ -115,7 +120,7 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
     plt.gca().set_aspect('equal', adjustable='box')
     cbar= plt.colorbar()
     plt.savefig(file_name+'.png',dpi=300)
-    plt.savefig(file_name+'.eps') 
+    plt.savefig(file_name+'.eps')
     plt.savefig(file_name+'.pdf',format='pdf')
     plt.clf()
     #plt.show()
@@ -207,12 +212,6 @@ class JacobiKANLayer(nn.Module):
             B = (2*i + self.a + self.b - 1)*(self.a**2 - self.b**2)/((2*i)*(i + self.a + self.b)*(2*i+self.a+self.b-2))
             C = -2*(i + self.a -1)*(i + self.b -1)*(2*i + self.a + self.b)/((2*i)*(i + self.a + self.b)*(2*i + self.a + self.b -2))
             jacobi[:, :, :, i] = (A*x + B)*jacobi[:, :, :, i-1].clone() + C*jacobi[:, :, :, i-2].clone()
-
-        #for i in range(2, self.degree + 1):
-        #    theta_k = (2 * i + self.a + self.b) * (2 * i + self.a + self.b - 1) / (2 * i * (i + self.a + self.b))
-        #    theta_k1 = (2 * i + self.a + self.b - 1) * (self.a ** 2 - self.b ** 2) / (2 * i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
-        #    theta_k2 = (i + self.a - 1) * (i + self.b - 1) * (2 * i + self.a + self.b) / (i * (i + self.a + self.b) * (2 * i + self.a + self.b - 2))
-        #    jacobi[:, :, :, i] = (theta_k * x + theta_k1) * jacobi[:, :, :, i - 1].clone() - theta_k2 * jacobi[:, :, :, i - 2].clone()
 
         # Compute the Jacobi interpolation
         jacobi = jacobi.permute(0, 2, 3, 1)  # shape = (batch_size, input_dim, degree + 1, num_points)
@@ -332,9 +331,9 @@ model = model.to(device)
 # Loss function and optimizer
 # Try learning rate of 0.0005
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
 
-num_epochs = 4000
+num_epochs = 5000
 
 epoch_losses = []
 validation_losses = []
@@ -425,13 +424,13 @@ for j in range(len(training_idx)):
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
     #Back to physical domain
-    predictions[0,0,:] = predictions[0,0,:]*(u_max - u_min) + u_min
-    predictions[0,1,:] = predictions[0,1,:]*(v_max - v_min) + v_min
-    predictions[0,2,:] = predictions[0,2,:]*(p_max - p_min) + p_min
+    predictions[0,0,:] = (predictions[0,0,:]+1)*(u_max - u_min)/2 + u_min
+    predictions[0,1,:] = (predictions[0,1,:]+1)*(v_max - v_min)/2 + v_min
+    predictions[0,2,:] = (predictions[0,2,:]+1)*(p_max - p_min)/2 + p_min
 
-    output_train[j,:,0] = output_train[j,:,0]*(u_max - u_min) + u_min
-    output_train[j,:,1] = output_train[j,:,1]*(v_max - v_min) + v_min
-    output_train[j,:,2] = output_train[j,:,2]*(p_max - p_min) + p_min
+    output_train[j,:,0] = (output_train[j,:,0]+1)*(u_max - u_min)/2 + u_min
+    output_train[j,:,1] = (output_train[j,:,1]+1)*(v_max - v_min)/2 + v_min
+    output_train[j,:,2] = (output_train[j,:,2]+1)*(p_max - p_min)/2 + p_min
 
     #Plot
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
@@ -488,10 +487,10 @@ for j in range(len(test_idx)):
     #Back to usual X and Y
     input_test[j,:,0] = (input_test[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_test[j,:,1] = (input_test[j,:,1] + 1)*(y_max - y_min)/2 + y_min
-  
-    predictions[0,0,:] = predictions[0,0,:]*(u_max - u_min) + u_min
-    predictions[0,1,:] = predictions[0,1,:]*(v_max - v_min) + v_min
-    predictions[0,2,:] = predictions[0,2,:]*(p_max - p_min) + p_min
+
+    predictions[0,0,:] = (predictions[0,0,:]+1)*(u_max - u_min)/2 + u_min
+    predictions[0,1,:] = (predictions[0,1,:]+1)*(v_max - v_min)/2 + v_min
+    predictions[0,2,:] = (predictions[0,2,:]+1)*(p_max - p_min)/2 + p_min
 
     #Plot
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),r'Prediction of velocity $u$ (m/s)')
