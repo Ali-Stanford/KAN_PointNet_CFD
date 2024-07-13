@@ -288,7 +288,7 @@ class PointNetKAN(nn.Module):
         # Concatenate local and global features
         x = torch.cat([local_feature, global_feature], dim=1)
 
-        # Shared MLP (512, 256, 128)
+        # Shared KAN (512, 256, 128)
         x = self.jacobikan6(x)
         x = self.bn6(x)
         x = self.jacobikan7(x)
@@ -296,7 +296,7 @@ class PointNetKAN(nn.Module):
         x = self.jacobikan8(x)
         x = self.bn8(x)
 
-        # Shared MLP (128, output_channels)
+        # Shared KAN (128, output_channels)
         x = self.jacobikan9(x)
         x = self.bn9(x)
         x = self.jacobikan10(x)
