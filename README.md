@@ -1,1 +1,1 @@
-# KAN PointNet
+# KAN PointNet CFD
