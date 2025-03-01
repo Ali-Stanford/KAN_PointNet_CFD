@@ -1,4 +1,5 @@
 # Kolmogorov-Arnold PointNet for Computational Fluid Dynamics
+![pic](./PointNetKAN.png)
 
 **Author:** Ali Kashefi (kashefi@stanford.edu) 
 
