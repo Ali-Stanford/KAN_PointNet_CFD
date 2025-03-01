@@ -1,6 +1,8 @@
 # Kolmogorov-Arnold PointNet for Computational Fluid Dynamics
 ![pic](./PointNetKAN.png)
 
+**Kolmogorov-Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries**
+
 **Author:** Ali Kashefi (kashefi@stanford.edu) 
 
 **Citation** <br>
