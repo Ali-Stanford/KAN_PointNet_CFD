@@ -1,1 +1,1 @@
-# KAN PointNet CFD
+# Kolmogorov-Arnold PointNet for CFD (Computational Fluid Dynamics)
