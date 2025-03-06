@@ -53,7 +53,7 @@ for i in range(data_number+240):
         output_data[count,:,2] = Data[i,:,2] # p (Pa)
         count += 1
 
-################# Maybe need to normalize when we consider three of them #################
+################# Normalize spatial coordinates #################
 
 x_min = np.min(input_data[:,:,0])
 x_max = np.max(input_data[:,:,0])
@@ -76,7 +76,7 @@ test_idx = np.load('/scratch/users/kashefi/KAN_revision/test_idx.npy')
 input_train, input_validation, input_test = input_data[training_idx,:], input_data[validation_idx,:], input_data[test_idx,:]
 output_train, output_validation, output_test = output_data[training_idx,:], output_data[validation_idx,:], output_data[test_idx,:]
 
-##### Normalize Train and Valditation Output #######
+##### Normalize Train and Validation Outputs #######
 u_min = np.min(output_train[:,:,0])
 u_max = np.max(output_train[:,:,0])
 v_min = np.min(output_train[:,:,1])
@@ -92,7 +92,7 @@ output_validation[:,:,0] = 2*(output_validation[:,:,0] - u_min)/(u_max - u_min) 
 output_validation[:,:,1] = 2*(output_validation[:,:,1] - v_min)/(v_max - v_min) - 1
 output_validation[:,:,2] = 2*(output_validation[:,:,2] - p_min)/(p_max - p_min) - 1
 
-##### Data visualization #####
+##### Functions for Data visualization #####
 
 def plot2DPointCloud(x_coord,y_coord,file_name):
     plt.scatter(x_coord,y_coord,s=2.5)
@@ -129,12 +129,6 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
     plt.savefig(file_name+'.pdf',format='pdf')
     plt.clf()
     #plt.show()
-
-#number = 10 #It should be less than 'data_number'
-#plot2DPointCloud(input_data[number,:,0],input_data[number,:,1],'PointCloud')
-#plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,0],'u_velocity','u (x-velocity component)')
-#plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,1],'v_velocity','v (y-velocity component)')
-#plotSolution(input_data[number,:,0],input_data[number,:,1],output_data[number,:,2],'pressure','pressure')
 
 ####################################################
 
@@ -225,7 +219,7 @@ class JacobiKANLayer(nn.Module):
         return y
 
 ############################ Define PointNet with KAN ##############################
-poly_degree = 3 #5 (a parameter to play with as a part of journal paper)
+poly_degree = 3
 
 class PointNetKAN(nn.Module):
     def __init__(self, input_channels, output_channels, scaling=1.0):
@@ -325,7 +319,7 @@ dataloader_Validation = DataLoader(validation_dataset, batch_size=Batch_Size_Val
 # Instantiate the model
 input_channels = 2 #x and y
 output_channels = 3 #u, v, and p
-Scaling = 0.25
+Scaling = 1.0
 model = PointNetKAN(input_channels, output_channels, scaling=Scaling)
 model = model.to(device)
 
@@ -497,6 +491,7 @@ print("Average Relative of Training for p: ", lrms_p / len(training_idx))
 print()
 print("############################################################")
 print()
+
 ############################# Error Analysis of Test ##########################
 rms_u, rms_v, rms_p = 0.0, 0.0, 0.0
 lrms_u, lrms_v, lrms_p = 0.0, 0.0, 0.0
