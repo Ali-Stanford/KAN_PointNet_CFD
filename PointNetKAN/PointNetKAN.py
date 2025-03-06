@@ -1,4 +1,4 @@
-######### Library #########
+###### Libraries ######
 import time 
 import torch
 import torch.nn as nn
@@ -18,9 +18,7 @@ plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
 plt.rcParams['font.size'] = '12'
 from mpl_toolkits.mplot3d import Axes3D
 
-# Check CUDA availability
-print(torch.cuda.is_available())
-
+###### Device setup ######
 if torch.cuda.is_available():
     device = torch.device("cuda")  # GPU available
 else:
@@ -28,71 +26,16 @@ else:
 
 torch.manual_seed(0)
 
-Data = np.load('/scratch/users/kashefi/KAN_revision/FullData.npy')
-data_number = Data.shape[0]
-data_number = data_number - 240
+###### Parameter setup ######
+Degree = 3 # Polynomial degree of Jacaboi Polynomial
+Alpha = -0.5 # \alpha in Jacaboi Polynomial
+Beta = -0.5 # \beta in Jacaboi Polynomial
+Scaling = 1.0 # To control the network size
+num_epochs = 5000 # Maximum numer of epochs for training
+Batch_Size_Train = 128 # batch size in training set
+Batch_Size_Validation = 100 # batch size in validation set
 
-print('Number of data is:')
-print(data_number)
-
-point_numbers = 1024
-space_variable = 2 # 2 in 2D (x,y) and 3 in 3D (x,y,z)
-cfd_variable = 3 # (u, v, p); which are the x-component of velocity, y-component of velocity, and pressure fields
-
-input_data = zeros([data_number,point_numbers,space_variable],dtype='f')
-output_data = zeros([data_number,point_numbers,cfd_variable],dtype='f')
-
-count = 0 
-
-for i in range(data_number+240):
-    if(i<1615 or i>1854):
-        input_data[count,:,0] = Data[i,:,0] # x coordinate (m)
-        input_data[count,:,1] = Data[i,:,1] # y coordinate (m)
-        output_data[count,:,0] = Data[i,:,3] # u (m/s)
-        output_data[count,:,1] = Data[i,:,4] # v (m/s)
-        output_data[count,:,2] = Data[i,:,2] # p (Pa)
-        count += 1
-
-################# Normalize spatial coordinates #################
-
-x_min = np.min(input_data[:,:,0])
-x_max = np.max(input_data[:,:,0])
-y_min = np.min(input_data[:,:,1])
-y_max = np.max(input_data[:,:,1])
-
-input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
-input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
-
-######## split data ########
-#all_indices = np.random.permutation(data_number)
-#training_idx = all_indices[:int(0.8*data_number)]
-#validation_idx = all_indices[int(0.8*data_number):int(0.9*data_number)]
-#test_idx = all_indices[int(0.9*data_number):]
-
-training_idx = np.load('/scratch/users/kashefi/KAN_revision/training_idx.npy')
-validation_idx = np.load('/scratch/users/kashefi/KAN_revision/validation_idx.npy')
-test_idx = np.load('/scratch/users/kashefi/KAN_revision/test_idx.npy')
-
-input_train, input_validation, input_test = input_data[training_idx,:], input_data[validation_idx,:], input_data[test_idx,:]
-output_train, output_validation, output_test = output_data[training_idx,:], output_data[validation_idx,:], output_data[test_idx,:]
-
-##### Normalize Train and Validation Outputs #######
-u_min = np.min(output_train[:,:,0])
-u_max = np.max(output_train[:,:,0])
-v_min = np.min(output_train[:,:,1])
-v_max = np.max(output_train[:,:,1])
-p_min = np.min(output_train[:,:,2])
-p_max = np.max(output_train[:,:,2])
-
-output_train[:,:,0] = 2*(output_train[:,:,0] - u_min)/(u_max - u_min) - 1
-output_train[:,:,1] = 2*(output_train[:,:,1] - v_min)/(v_max - v_min) - 1
-output_train[:,:,2] = 2*(output_train[:,:,2] - p_min)/(p_max - p_min) - 1
-
-output_validation[:,:,0] = 2*(output_validation[:,:,0] - u_min)/(u_max - u_min) - 1
-output_validation[:,:,1] = 2*(output_validation[:,:,1] - v_min)/(v_max - v_min) - 1
-output_validation[:,:,2] = 2*(output_validation[:,:,2] - p_min)/(p_max - p_min) - 1
-
-##### Functions for Data visualization #####
+###### Functions for data visualization and error calculations ######
 
 def plot2DPointCloud(x_coord,y_coord,file_name):
     plt.scatter(x_coord,y_coord,s=2.5)
@@ -130,8 +73,6 @@ def plotSolution(x_coord,y_coord,solution,file_name,title):
     plt.clf()
     #plt.show()
 
-####################################################
-
 def plot_loss(training_losses, validation_losses):
     plt.plot(training_losses, label='Training Loss', color='blue')
     plt.plot(validation_losses, label='Validation Loss', color='orange')
@@ -145,7 +86,100 @@ def plot_loss(training_losses, validation_losses):
     plt.clf()
     #plt.show()
 
-####################################################
+def compute_rms_error(generated_cloud, variable, ground_truth):
+    generated = generated_cloud[0, variable, :]
+    squared_diff = (generated - ground_truth) ** 2
+    mean_squared_diff = np.mean(squared_diff)
+    rms_error = np.sqrt(mean_squared_diff)
+    return rms_error
+
+def compute_relative_error(generated_cloud, variable, ground_truth):
+    generated = generated_cloud[0, variable, :]
+    difference = generated - ground_truth
+    norm_difference = np.linalg.norm(difference)
+    norm_ground_truth = np.linalg.norm(ground_truth)
+    relative_error = norm_difference / norm_ground_truth
+    return relative_error
+
+def plot_histogram(x,title):
+    x = [i * 100 for i in x]
+    plt.hist(x, bins='auto', edgecolor='black')
+    plt.title(title)
+    plt.xlabel("Relative error")
+    plt.ylabel("Frequency")
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig(title+'.png',dpi=300)
+    #plt.savefig(file_name+'.eps')
+    plt.savefig(title+'.pdf',format='pdf')
+    plt.clf()
+
+
+###### Data loading and data preparation ######
+Data = np.load('FullData.npy')
+data_number = Data.shape[0]
+data_number = data_number - 240
+
+print('Number of data is:')
+print(data_number)
+
+point_numbers = 1024
+space_variable = 2 # 2 in 2D (x,y) and 3 in 3D (x,y,z)
+cfd_variable = 3 # (u, v, p); which are the x-component of velocity, y-component of velocity, and pressure fields
+
+input_data = zeros([data_number,point_numbers,space_variable],dtype='f')
+output_data = zeros([data_number,point_numbers,cfd_variable],dtype='f')
+
+count = 0 
+
+for i in range(data_number+240):
+    if(i<1615 or i>1854):
+        input_data[count,:,0] = Data[i,:,0] # x coordinate (m)
+        input_data[count,:,1] = Data[i,:,1] # y coordinate (m)
+        output_data[count,:,0] = Data[i,:,3] # u (m/s)
+        output_data[count,:,1] = Data[i,:,4] # v (m/s)
+        output_data[count,:,2] = Data[i,:,2] # p (Pa)
+        count += 1
+
+###### Normalize spatial coordinates ######
+
+x_min = np.min(input_data[:,:,0])
+x_max = np.max(input_data[:,:,0])
+y_min = np.min(input_data[:,:,1])
+y_max = np.max(input_data[:,:,1])
+
+input_data[:,:,0] = 2*(input_data[:,:,0] - x_min)/(x_max - x_min) - 1
+input_data[:,:,1] = 2*(input_data[:,:,1] - y_min)/(y_max - y_min) - 1
+
+###### Split data ######
+training_idx = np.load('training_idx.npy')
+validation_idx = np.load('validation_idx.npy')
+test_idx = np.load('test_idx.npy')
+
+#all_indices = np.random.permutation(data_number)
+#training_idx = all_indices[:int(0.8*data_number)]
+#validation_idx = all_indices[int(0.8*data_number):int(0.9*data_number)]
+#test_idx = all_indices[int(0.9*data_number):]
+
+input_train, input_validation, input_test = input_data[training_idx,:], input_data[validation_idx,:], input_data[test_idx,:]
+output_train, output_validation, output_test = output_data[training_idx,:], output_data[validation_idx,:], output_data[test_idx,:]
+
+##### Normalize the train set and validation set outputs #######
+u_min = np.min(output_train[:,:,0])
+u_max = np.max(output_train[:,:,0])
+v_min = np.min(output_train[:,:,1])
+v_max = np.max(output_train[:,:,1])
+p_min = np.min(output_train[:,:,2])
+p_max = np.max(output_train[:,:,2])
+
+output_train[:,:,0] = 2*(output_train[:,:,0] - u_min)/(u_max - u_min) - 1
+output_train[:,:,1] = 2*(output_train[:,:,1] - v_min)/(v_max - v_min) - 1
+output_train[:,:,2] = 2*(output_train[:,:,2] - p_min)/(p_max - p_min) - 1
+
+output_validation[:,:,0] = 2*(output_validation[:,:,0] - u_min)/(u_max - u_min) - 1
+output_validation[:,:,1] = 2*(output_validation[:,:,1] - v_min)/(v_max - v_min) - 1
+output_validation[:,:,2] = 2*(output_validation[:,:,2] - p_min)/(p_max - p_min) - 1
+
+##### Dataset and Network #####
 
 class CreateDataset(Dataset):
     def __init__(self, input_data_x, input_data_y, output_data_u, output_data_v, output_data_p):
@@ -176,7 +210,7 @@ class CreateDataset(Dataset):
 
         return input_data, targets
 
-######################################
+###### Shared Kolmogorov-Arnold Networks (KANs) ######
 
 class JacobiKANLayer(nn.Module):
     def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
@@ -194,11 +228,6 @@ class JacobiKANLayer(nn.Module):
         batch_size, input_dim, num_points = x.shape
         x = x.permute(0, 2, 1).contiguous()  # shape = (batch_size, num_points, input_dim)
         x = torch.tanh(x)  # Normalize x to [-1, 1]
-
-        #x_min = x.min(dim=1, keepdim=True).values  # shape = (batch_size, 1, input_dim)
-        #x_max = x.max(dim=1, keepdim=True).values  # shape = (batch_size, 1, input_dim)
-        #epsilon = 1e-6
-        #x = 2 * (x - x_min) / (x_max - x_min + epsilon) - 1
 
         # Initialize Jacobi polynomial tensors
         jacobi = torch.ones(batch_size, num_points, self.input_dim, self.degree + 1, device=x.device)
@@ -218,32 +247,31 @@ class JacobiKANLayer(nn.Module):
 
         return y
 
-############################ Define PointNet with KAN ##############################
-poly_degree = 3
+###### PointNet with shared KANs ######
 
 class PointNetKAN(nn.Module):
-    def __init__(self, input_channels, output_channels, scaling=1.0):
+    def __init__(self, input_channels, output_channels, scaling=1.0, poly_degree=3, alpha=1.0, beta=1.0):
         super(PointNetKAN, self).__init__()
 
-        #Shared KAN (64, 64)
-        self.jacobikan1 = JacobiKANLayer(input_channels, int(64 * scaling), poly_degree)
-        self.jacobikan2 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), poly_degree)
+        #shared KANs (64, 64)
+        self.jacobikan1 = JacobiKANLayer(input_channels, int(64 * scaling), poly_degree, alpha, beta)
+        self.jacobikan2 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), poly_degree, alpha, beta)
 
-        #Shared KAN (64, 128, 1024)
-        self.jacobikan3 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), poly_degree)
-        self.jacobikan4 = JacobiKANLayer(int(64 * scaling), int(128 * scaling), poly_degree)
-        self.jacobikan5 = JacobiKANLayer(int(128 * scaling), int(1024 * scaling), poly_degree)
+        #shared KANs (64, 128, 1024)
+        self.jacobikan3 = JacobiKANLayer(int(64 * scaling), int(64 * scaling), poly_degree, alpha, beta)
+        self.jacobikan4 = JacobiKANLayer(int(64 * scaling), int(128 * scaling), poly_degree, alpha, beta)
+        self.jacobikan5 = JacobiKANLayer(int(128 * scaling), int(1024 * scaling), poly_degree, alpha, beta)
 
-        #Shared KAN (512, 256, 128)
-        self.jacobikan6 = JacobiKANLayer(int(1024 * scaling) + int(64 * scaling), int(512 * scaling), poly_degree)
-        self.jacobikan7 = JacobiKANLayer(int(512 * scaling), int(256 * scaling), poly_degree)
-        self.jacobikan8 = JacobiKANLayer(int(256 * scaling), int(128 * scaling), poly_degree)
+        #shared KANs (512, 256, 128)
+        self.jacobikan6 = JacobiKANLayer(int(1024 * scaling) + int(64 * scaling), int(512 * scaling), poly_degree, alpha, beta)
+        self.jacobikan7 = JacobiKANLayer(int(512 * scaling), int(256 * scaling), poly_degree, alpha, beta)
+        self.jacobikan8 = JacobiKANLayer(int(256 * scaling), int(128 * scaling), poly_degree, alpha, beta)
 
-        #Shared KAN (128, output_channels)
-        self.jacobikan9 = JacobiKANLayer(int(128 * scaling), int(128 * scaling), poly_degree)
-        self.jacobikan10 = JacobiKANLayer(int(128 * scaling), output_channels, poly_degree)
+        #shared KANs (128, output_channels)
+        self.jacobikan9 = JacobiKANLayer(int(128 * scaling), int(128 * scaling), poly_degree, alpha, beta)
+        self.jacobikan10 = JacobiKANLayer(int(128 * scaling), output_channels, poly_degree, alpha, beta)
 
-        #Batch Normalization
+        #batch normalization
         self.bn1 = nn.BatchNorm1d(int(64 * scaling))
         self.bn2 = nn.BatchNorm1d(int(64 * scaling))
         self.bn3 = nn.BatchNorm1d(int(64 * scaling))
@@ -256,7 +284,7 @@ class PointNetKAN(nn.Module):
 
     def forward(self, x):
 
-        # Shared KAN (64, 64)
+        # shared KANs (64, 64)
         x = self.jacobikan1(x)
         x = self.bn1(x)
         x = self.jacobikan2(x)
@@ -264,7 +292,7 @@ class PointNetKAN(nn.Module):
 
         local_feature = x
 
-        # Shared KAN (64, 128, 1024)
+        # shared KANs (64, 128, 1024)
         x = self.jacobikan3(x)
         x = self.bn3(x)
         x = self.jacobikan4(x)
@@ -272,14 +300,14 @@ class PointNetKAN(nn.Module):
         x = self.jacobikan5(x)
         x = self.bn5(x)
 
-        # Max pooling to get the global feature
+        # max pooling to get the global feature
         global_feature = F.max_pool1d(x, kernel_size=num_points)
         global_feature = global_feature.view(-1, global_feature.size(1), 1).expand(-1, -1, num_points)
 
-        # Concatenate local and global features
+        # concatenate local and global features
         x = torch.cat([local_feature, global_feature], dim=1)
 
-        # Shared MLP (512, 256, 128)
+        # shared KANs (512, 256, 128)
         x = self.jacobikan6(x)
         x = self.bn6(x)
         x = self.jacobikan7(x)
@@ -287,7 +315,7 @@ class PointNetKAN(nn.Module):
         x = self.jacobikan8(x)
         x = self.bn8(x)
 
-        # Shared MLP (128, output_channels)
+        # shared KANs (128, output_channels)
         x = self.jacobikan9(x)
         x = self.bn9(x)
         x = self.jacobikan10(x)
@@ -297,8 +325,6 @@ class PointNetKAN(nn.Module):
 ###################################################
 num_samples = data_number
 num_points = 1024
-
-########################################
 
 input_train = torch.from_numpy(input_train).float()
 input_validation = torch.from_numpy(input_validation).float()
@@ -311,35 +337,28 @@ output_test = torch.from_numpy(output_test).float()
 training_dataset = CreateDataset(input_train[:,:,0],input_train[:,:,1],output_train[:,:,0],output_train[:,:,1],output_train[:,:,2])
 validation_dataset = CreateDataset(input_validation[:,:,0],input_validation[:,:,1],output_validation[:,:,0],output_validation[:,:,1],output_validation[:,:,2])
 
-Batch_Size_Train = 128
-Batch_Size_Validation = 100
 dataloader_Train = DataLoader(training_dataset, batch_size=Batch_Size_Train, shuffle=True, drop_last=True)
 dataloader_Validation = DataLoader(validation_dataset, batch_size=Batch_Size_Validation, shuffle=True, drop_last=True)
 
-# Instantiate the model
-input_channels = 2 #x and y
-output_channels = 3 #u, v, and p
-Scaling = 1.0
-model = PointNetKAN(input_channels, output_channels, scaling=Scaling)
+model = PointNetKAN(input_channels=space_variable, output_channels=cfd_variable, poly_degree=Degree, scaling=Scaling, alpha=Alpha, beta=Beta)
 model = model.to(device)
 
-# Calculate the number of trainable parameters
+###### calculate the number of trainable parameters ######
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 num_parameters = count_parameters(model)
 print(f'The number of trainable parameters in the model: {num_parameters}')
 
-# Loss function and optimizer
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, betas=(0.9, 0.999), eps=1e-8, weight_decay=0, amsgrad=False)
-
-num_epochs = 5000
 
 epoch_losses = []
 validation_losses = []
 
 total_training_time = 0
+
+###### training ######
 
 for epoch in range(num_epochs):
     model.train()
@@ -397,40 +416,9 @@ with open('epoch_losses.txt', 'w') as file:
         file.write(f"{loss}\n")
 
 plot_loss(epoch_losses,validation_losses)
-######################################################
 
-def compute_rms_error(generated_cloud, variable, ground_truth):
-    generated = generated_cloud[0, variable, :]
-    squared_diff = (generated - ground_truth) ** 2
-    mean_squared_diff = np.mean(squared_diff)
-    rms_error = np.sqrt(mean_squared_diff)
-    return rms_error
 
-#######################################################
-
-def compute_relative_error(generated_cloud, variable, ground_truth):
-    generated = generated_cloud[0, variable, :]
-    difference = generated - ground_truth
-    norm_difference = np.linalg.norm(difference)
-    norm_ground_truth = np.linalg.norm(ground_truth)
-    relative_error = norm_difference / norm_ground_truth
-    return relative_error
-
-#######################################################
-
-def plot_histogram(x,title):
-    x = [i * 100 for i in x]
-    plt.hist(x, bins='auto', edgecolor='black')
-    plt.title(title)
-    plt.xlabel("Relative error")
-    plt.ylabel("Frequency")
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.savefig(title+'.png',dpi=300)
-    #plt.savefig(file_name+'.eps')
-    plt.savefig(title+'.pdf',format='pdf')
-    plt.clf()
-
-###################### Error Analysis of Training #################################
+###### Error analysis of the training set ######
 rms_u, rms_v, rms_p = 0.0, 0.0, 0.0
 lrms_u, lrms_v, lrms_p = 0.0, 0.0, 0.0
 
@@ -469,7 +457,6 @@ for j in range(len(training_idx)):
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,2].cpu().numpy(),'p_truth_train'+str(j),'p')
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_train[j,:,2].cpu().numpy()),'p_abs_train'+str(j),'p')
 
-    #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_train[j,:,0].cpu().numpy())
     lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_train[j,:,0].cpu().numpy())
 
@@ -492,7 +479,7 @@ print()
 print("############################################################")
 print()
 
-############################# Error Analysis of Test ##########################
+###### Error analysis of the test set ######
 rms_u, rms_v, rms_p = 0.0, 0.0, 0.0
 lrms_u, lrms_v, lrms_p = 0.0, 0.0, 0.0
 
@@ -530,7 +517,6 @@ for j in range(len(test_idx)):
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,2].cpu().numpy(),'p_truth_test'+str(j),r'Ground truth of gauge pressure (Pa)')
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,2,:].cpu().numpy()-output_test[j,:,2].cpu().numpy()),'p_abs_test'+str(j),r'Absolute error of gauge pressure (Pa)')
 
-    #Error Analysis
     rms_u += compute_rms_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy())
     lrms_u += compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy())
 
@@ -544,7 +530,6 @@ for j in range(len(test_idx)):
     v_collection.append(compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1].cpu().numpy()))
     p_collection.append(compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy()))
 
-###################################################################
 
 print("Average RMS of Test for u: ", rms_u / len(test_idx))
 print("Average Relative of Test for u: ", lrms_u / len(test_idx))
@@ -573,7 +558,6 @@ print()
 print("Minimum relative error of test for p: ", min(p_collection))
 print("Index: ",p_collection.index(min(p_collection)))
 
-#########################################################################
 
 with open("u_collection.txt", "w") as file:
     for item in u_collection:
@@ -587,13 +571,6 @@ with open("p_collection.txt", "w") as file:
     for item in p_collection:
         file.write(f"{item}\n")
 
-#########################################################################
-
-#plot_histogram(v_collection,r'Histogram of prediction of velocity $v$')
-#plot_histogram(u_collection,r'Histogram of prediction of velocity $u$')
-#plot_histogram(p_collection,r'Histogram of prediction of gauge pressure')
-
 plot_histogram(v_collection,"Av")
 plot_histogram(u_collection,"Au")
 plot_histogram(p_collection,"Ap")
-
