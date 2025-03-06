@@ -114,12 +114,8 @@ def plot_histogram(x,title):
     plt.clf()
 
 ###### Data loading and data preparation ######
-Data = np.load('FullData.npy')
+Data = np.load('CFDdata.npy')
 data_number = Data.shape[0]
-data_number = data_number - 240
-
-print('Number of data is:')
-print(data_number)
 
 point_numbers = 1024
 space_variable = 2 # 2 in 2D (x,y) and 3 in 3D (x,y,z)
@@ -128,16 +124,12 @@ cfd_variable = 3 # (u, v, p); which are the x-component of velocity, y-component
 input_data = zeros([data_number,point_numbers,space_variable],dtype='f')
 output_data = zeros([data_number,point_numbers,cfd_variable],dtype='f')
 
-count = 0 
+input_data[:, :, 0] = Data[:, :, 0]  # x coordinate
+input_data[:, :, 1] = Data[:, :, 1]  # y coordinate
 
-for i in range(data_number+240):
-    if(i<1615 or i>1854):
-        input_data[count,:,0] = Data[i,:,0] # x coordinate (m)
-        input_data[count,:,1] = Data[i,:,1] # y coordinate (m)
-        output_data[count,:,0] = Data[i,:,3] # u (m/s)
-        output_data[count,:,1] = Data[i,:,4] # v (m/s)
-        output_data[count,:,2] = Data[i,:,2] # p (Pa)
-        count += 1
+output_data[:, :, 0] = Data[:, :, 3]  # u (m/s)
+output_data[:, :, 1] = Data[:, :, 4]  # v (m/s)
+output_data[:, :, 2] = Data[:, :, 2]  # p (Pa)
 
 ###### Normalize spatial coordinates ######
 x_min = np.min(input_data[:,:,0])
