@@ -416,11 +416,11 @@ for j in range(len(training_idx)):
         input_data_pred = input_data_pred.to(device)
         predictions = model(input_data_pred) #shape is [1, 3, num_points]
 
-    #Back to usual X and Y
+    #back to usual x and y coordinates
     input_train[j,:,0] = (input_train[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
-    #Back to physical domain
+    #back to the physical domain
     predictions[0,0,:] = (predictions[0,0,:]+1)*(u_max - u_min)/2 + u_min
     predictions[0,1,:] = (predictions[0,1,:]+1)*(v_max - v_min)/2 + v_min
     predictions[0,2,:] = (predictions[0,2,:]+1)*(p_max - p_min)/2 + p_min
@@ -429,7 +429,7 @@ for j in range(len(training_idx)):
     output_train[j,:,1] = (output_train[j,:,1]+1)*(v_max - v_min)/2 + v_min
     output_train[j,:,2] = (output_train[j,:,2]+1)*(p_max - p_min)/2 + p_min
 
-    #Plot
+    #plot
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), output_train[j,:,0].cpu().numpy(),'u_truth_train'+str(j),'u')
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_train[j,:,0].cpu().numpy()),'u_abs_train'+str(j),'u')
@@ -481,7 +481,7 @@ for j in range(len(test_idx)):
         input_data_pred = input_data_pred.to(device)
         predictions = model(input_data_pred) #shape is [1, 3, num_points]
 
-    #Back to usual X and Y
+    #back to usual x and y coordinates
     input_test[j,:,0] = (input_test[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_test[j,:,1] = (input_test[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
@@ -489,7 +489,7 @@ for j in range(len(test_idx)):
     predictions[0,1,:] = (predictions[0,1,:]+1)*(v_max - v_min)/2 + v_min
     predictions[0,2,:] = (predictions[0,2,:]+1)*(p_max - p_min)/2 + p_min
 
-    #Plot
+    #plot
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),r'Prediction of velocity $u$ (m/s)')
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), output_test[j,:,0].cpu().numpy(),'u_truth_test'+str(j),r'Ground truth of velocity $u$ (m/s)')
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), np.abs(predictions[0,0,:].cpu().numpy()-output_test[j,:,0].cpu().numpy()),'u_abs_test'+str(j),r'Absolute error of velocity $u$ (m/s)')
@@ -514,7 +514,6 @@ for j in range(len(test_idx)):
     u_collection.append(compute_relative_error(predictions.cpu().numpy(), 0, output_test[j,:,0].cpu().numpy()))
     v_collection.append(compute_relative_error(predictions.cpu().numpy(), 1, output_test[j,:,1].cpu().numpy()))
     p_collection.append(compute_relative_error(predictions.cpu().numpy(), 2, output_test[j,:,2].cpu().numpy()))
-
 
 print("Average RMS of Test for u: ", rms_u / len(test_idx))
 print("Average Relative of Test for u: ", lrms_u / len(test_idx))
@@ -554,7 +553,3 @@ with open("v_collection.txt", "w") as file:
 with open("p_collection.txt", "w") as file:
     for item in p_collection:
         file.write(f"{item}\n")
-
-plot_histogram(v_collection,"Av")
-plot_histogram(u_collection,"Au")
-plot_histogram(p_collection,"Ap")
