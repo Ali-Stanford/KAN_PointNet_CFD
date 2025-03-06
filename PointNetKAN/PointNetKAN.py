@@ -170,7 +170,6 @@ output_validation[:,:,1] = 2*(output_validation[:,:,1] - v_min)/(v_max - v_min) 
 output_validation[:,:,2] = 2*(output_validation[:,:,2] - p_min)/(p_max - p_min) - 1
 
 ##### Dataset and Network #####
-
 class CreateDataset(Dataset):
     def __init__(self, input_data_x, input_data_y, output_data_u, output_data_v, output_data_p):
         assert input_data_x.shape == input_data_y.shape == output_data_u.shape == output_data_v.shape == output_data_p.shape, \
@@ -201,7 +200,6 @@ class CreateDataset(Dataset):
         return input_data, targets
 
 ###### Shared Kolmogorov-Arnold Networks (KANs) ######
-
 class JacobiKANLayer(nn.Module):
     def __init__(self, input_dim, output_dim, degree, a=1.0, b=1.0):
         super(JacobiKANLayer, self).__init__()
@@ -238,7 +236,6 @@ class JacobiKANLayer(nn.Module):
         return y
 
 ###### PointNet with shared KANs ######
-
 class PointNetKAN(nn.Module):
     def __init__(self, input_channels, output_channels, scaling=1.0, poly_degree=3, alpha=1.0, beta=1.0):
         super(PointNetKAN, self).__init__()
@@ -349,7 +346,6 @@ validation_losses = []
 total_training_time = 0
 
 ###### training ######
-
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
@@ -374,7 +370,7 @@ for epoch in range(num_epochs):
     print(f'Epoch [{epoch+1}/{num_epochs}], Average Training Loss: {running_loss/len(training_idx):.8f}')
     epoch_losses.append(running_loss)
 
-    # Validation loop
+    # validation loop
     model.eval()
     val_running_loss = 0.0
 
@@ -406,7 +402,6 @@ with open('epoch_losses.txt', 'w') as file:
         file.write(f"{loss}\n")
 
 plot_loss(epoch_losses,validation_losses)
-
 
 ###### Error analysis of the training set ######
 rms_u, rms_v, rms_p = 0.0, 0.0, 0.0
@@ -547,7 +542,6 @@ print("Index: ",v_collection.index(min(v_collection)))
 print()
 print("Minimum relative error of test for p: ", min(p_collection))
 print("Index: ",p_collection.index(min(p_collection)))
-
 
 with open("u_collection.txt", "w") as file:
     for item in u_collection:
