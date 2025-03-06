@@ -113,7 +113,6 @@ def plot_histogram(x,title):
     plt.savefig(title+'.pdf',format='pdf')
     plt.clf()
 
-
 ###### Data loading and data preparation ######
 Data = np.load('FullData.npy')
 data_number = Data.shape[0]
@@ -141,7 +140,6 @@ for i in range(data_number+240):
         count += 1
 
 ###### Normalize spatial coordinates ######
-
 x_min = np.min(input_data[:,:,0])
 x_max = np.max(input_data[:,:,0])
 y_min = np.min(input_data[:,:,1])
