@@ -230,14 +230,14 @@ class PointNetMLP(nn.Module):
     def forward(self, x):
 
         # shared MLP (64, 64)
-        x = F.tanh(self.bn1(self.conv1(x)))
-        x = F.tanh(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
         local_feature = x
 
         # Shared MLP (64, 128, 1024)
-        x = F.tanh(self.bn3(self.conv3(x)))
-        x = F.tanh(self.bn4(self.conv4(x)))
-        x = F.tanh(self.bn5(self.conv5(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+        x = F.relu(self.bn5(self.conv5(x)))
 
         # Max pooling to get the global feature
         global_feature = F.max_pool1d(x, kernel_size=x.size(-1))
@@ -247,12 +247,12 @@ class PointNetMLP(nn.Module):
         x = torch.cat([local_feature, global_feature], dim=1)
 
         # shared MLP (512, 256, 128)
-        x = F.tanh(self.bn6(self.conv6(x)))
-        x = F.tanh(self.bn7(self.conv7(x)))
-        x = F.tanh(self.bn8(self.conv8(x)))
+        x = F.relu(self.bn6(self.conv6(x)))
+        x = F.relu(self.bn7(self.conv7(x)))
+        x = F.relu(self.bn8(self.conv8(x)))
 
         # shared MLP (128, output_channels)
-        x = F.tanh(self.bn9(self.conv9(x)))
+        x = F.relu(self.bn9(self.conv9(x)))
         x = torch.sigmoid(self.conv10(x))
         return x
 
