@@ -368,13 +368,13 @@ for j in range(len(training_idx)):
     input_train[j,:,1] = (input_train[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
     #back to the physical domain
-    predictions[0,0,:] = (predictions[0,0,:]+1)*(u_max - u_min)/2 + u_min
-    predictions[0,1,:] = (predictions[0,1,:]+1)*(v_max - v_min)/2 + v_min
-    predictions[0,2,:] = (predictions[0,2,:]+1)*(p_max - p_min)/2 + p_min
+    predictions[0,0,:] = (predictions[0,0,:])*(u_max - u_min) + u_min
+    predictions[0,1,:] = (predictions[0,1,:])*(v_max - v_min) + v_min
+    predictions[0,2,:] = (predictions[0,2,:])*(p_max - p_min) + p_min
 
-    output_train[j,:,0] = (output_train[j,:,0]+1)*(u_max - u_min)/2 + u_min
-    output_train[j,:,1] = (output_train[j,:,1]+1)*(v_max - v_min)/2 + v_min
-    output_train[j,:,2] = (output_train[j,:,2]+1)*(p_max - p_min)/2 + p_min
+    output_train[j,:,0] = (output_train[j,:,0])*(u_max - u_min) + u_min
+    output_train[j,:,1] = (output_train[j,:,1])*(v_max - v_min) + v_min
+    output_train[j,:,2] = (output_train[j,:,2])*(p_max - p_min) + p_min
 
     #plot
     #plotSolution(input_train[j,:,0].cpu().numpy(), input_train[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_train'+str(j),'u')
@@ -432,9 +432,9 @@ for j in range(len(test_idx)):
     input_test[j,:,0] = (input_test[j,:,0] + 1)*(x_max - x_min)/2 + x_min
     input_test[j,:,1] = (input_test[j,:,1] + 1)*(y_max - y_min)/2 + y_min
 
-    predictions[0,0,:] = (predictions[0,0,:]+1)*(u_max - u_min)/2 + u_min
-    predictions[0,1,:] = (predictions[0,1,:]+1)*(v_max - v_min)/2 + v_min
-    predictions[0,2,:] = (predictions[0,2,:]+1)*(p_max - p_min)/2 + p_min
+    predictions[0,0,:] = (predictions[0,0,:])*(u_max - u_min) + u_min
+    predictions[0,1,:] = (predictions[0,1,:])*(v_max - v_min) + v_min
+    predictions[0,2,:] = (predictions[0,2,:])*(p_max - p_min) + p_min
 
     #plot
     plotSolution(input_test[j,:,0].cpu().numpy(), input_test[j,:,1].cpu().numpy(), predictions[0,0,:].cpu().numpy(),'u_pred_test'+str(j),r'Prediction of velocity $u$ (m/s)')
