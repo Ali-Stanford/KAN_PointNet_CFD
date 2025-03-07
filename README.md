@@ -59,6 +59,9 @@ pip3 install numpy matplotlib torchsummary
 ```
 **Data** <be>
 
+```bash
+wget https://web.stanford.edu/~kashefi/data/CFDdata.npy
+```
 
 **Questions?** <br>
 If you have any questions or need assistance, please do not hesitate to contact Ali Kashefi (kashefi@stanford.edu) via email. 
