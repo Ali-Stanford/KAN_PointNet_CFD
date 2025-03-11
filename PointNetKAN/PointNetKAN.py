@@ -1,3 +1,23 @@
+# In The Name of God
+##### Kolmogorov–Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries #####
+
+#Authors: Ali Kashefi (kashefi@stanford.edu)
+
+##### Citation #####
+#If you use the code, please cite the following journal paper: 
+#[Kolmogorov–Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries]
+#(https://doi.org/10.1016/j.cma.2025.117888)
+
+#@article{kashefi2024KANpointnetCFD,
+#title = {Kolmogorov–Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries},
+#journal = {Computer Methods in Applied Mechanics and Engineering},
+#volume = {439},
+#pages = {117888},
+#year = {2025},
+#doi = {https://doi.org/10.1016/j.cma.2025.117888},
+#author = {Ali Kashefi}}
+
+
 ###### Libraries ######
 import time 
 import torch
