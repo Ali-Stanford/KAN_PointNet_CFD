@@ -8,7 +8,7 @@
 **Citation** <br>
 If you use the code, please cite the following article: <br>
 
-**[Kolmogorov-Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries](https://arxiv.org/abs/2408.02950)**
+**[Kolmogorov-Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries](https://doi.org/10.1016/j.cma.2025.117888)**
 
     @article{kashefi2024KANpointnetCFD,
       title = {Kolmogorov–Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries},
