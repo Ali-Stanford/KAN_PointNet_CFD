@@ -11,10 +11,13 @@ If you use the code, please cite the following article: <br>
 **[Kolmogorov-Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries](https://arxiv.org/abs/2408.02950)**
 
     @article{kashefi2024KANpointnetCFD,
-      title={Kolmogorov-Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries},
-      author={Kashefi, Ali},
-      journal={arXiv preprint arXiv:2408.02950},
-      year={2024}}
+      title = {Kolmogorov–Arnold PointNet: Deep learning for prediction of fluid fields on irregular geometries},
+      journal = {Computer Methods in Applied Mechanics and Engineering},
+      volume = {439},
+      pages = {117888},
+      year = {2025},
+      doi = {https://doi.org/10.1016/j.cma.2025.117888},
+      author = {Ali Kashefi}}
 
 **Abstract** <be>
 
