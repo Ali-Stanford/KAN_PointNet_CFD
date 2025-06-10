@@ -19,6 +19,16 @@ If you use the code, please cite the following article: <br>
       doi = {https://doi.org/10.1016/j.cma.2025.117888},
       author = {Ali Kashefi}}
 
+   @article{kashefi2021PointNetCFD, 
+      author = {Kashefi, Ali  and Rempe, Davis  and Guibas, Leonidas J. }, 
+      title = {A point-cloud deep learning framework for prediction of fluid flow fields on irregular geometries}, 
+      journal = {Physics of Fluids}, 
+      volume = {33}, 
+      number = {2}, 
+      pages = {027104}, 
+      year = {2021}, 
+      doi = {10.1063/5.0033376},}
+
 **Abstract** <be>
 
 Kolmogorov-Arnold Networks (KANs) have emerged as a promising alternative to traditional Multilayer Perceptrons (MLPs) in deep learning. KANs have already been integrated into various architectures, such as convolutional neural networks, graph neural networks, and transformers, and their potential has been assessed for predicting physical quantities. However, the combination of KANs with point-cloud-based neural networks (e.g., PointNet) for computational physics has not yet been explored. To address this, we present Kolmogorov-Arnold PointNet (KA-PointNet) as a novel supervised deep learning framework for the prediction of incompressible steady-state fluid flow fields in irregular domains, where the predicted fields are a function of the geometry of the domains. In KA-PointNet, we implement shared KANs in the segmentation branch of the PointNet architecture. We utilize Jacobi polynomials to construct shared KANs. As a benchmark test case, we consider incompressible laminar steady-state flow over a cylinder, where the geometry of its cross-section varies over the data set. We investigate the performance of Jacobi polynomials with different degrees as well as special cases of Jacobi polynomials such as Legendre polynomials, Chebyshev polynomials of the first and second kinds, and Gegenbauer polynomials, in terms of the computational cost of training and accuracy of prediction of the test set. Furthermore, we examine the robustness of KA-PointNet in the presence of noisy training data and missing points in the point clouds of the test set. Additionally, we compare the performance of PointNet with shared KANs (i.e., KA-PointNet) and PointNet with shared MLPs. It is observed that when the number of trainable parameters is approximately equal, PointNet with shared KANs (i.e., KA-PointNet) outperforms PointNet with shared MLPs. Moreover, KA-PointNet predicts the pressure and velocity distributions along the surface of cylinders more accurately, resulting in more precise computations of lift and drag.
