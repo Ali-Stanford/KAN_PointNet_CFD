@@ -19,7 +19,8 @@ If you use the code, please cite the following article: <br>
       doi = {https://doi.org/10.1016/j.cma.2025.117888},
       author = {Ali Kashefi}}
 
-   @article{kashefi2021PointNetCFD, 
+
+    @article{kashefi2021PointNetCFD, 
       author = {Kashefi, Ali  and Rempe, Davis  and Guibas, Leonidas J. }, 
       title = {A point-cloud deep learning framework for prediction of fluid flow fields on irregular geometries}, 
       journal = {Physics of Fluids}, 
@@ -27,7 +28,7 @@ If you use the code, please cite the following article: <br>
       number = {2}, 
       pages = {027104}, 
       year = {2021}, 
-      doi = {10.1063/5.0033376},}
+      doi = {10.1063/5.0033376}}
 
 **Abstract** <be>
 
