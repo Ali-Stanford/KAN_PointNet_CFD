@@ -21,7 +21,7 @@
 #number = {2}, 
 #pages = {027104}, 
 #year = {2021}, 
-#doi = {10.1063/5.0033376},}
+#doi = {10.1063/5.0033376}}
 
 
 #@article{kashefi2024KANpointnetCFD,
